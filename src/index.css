@@ -1,0 +1,23 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #ffffff;
+  color: #0a2540;
+}
+html {
+  scroll-behavior: smooth;
+}
+
+button,
+a {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}

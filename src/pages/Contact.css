@@ -1,0 +1,81 @@
+.contactSection {
+  padding: 100px 64px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.contactHeading {
+  font-size: 36px;
+  font-weight: 800;
+  color: #0a2540;
+  margin-bottom: 12px;
+}
+
+.contactIntro {
+  font-size: 16px;
+  color: #425466;
+  margin-bottom: 40px;
+}
+
+.contactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contactInput,
+.contactTextarea {
+  padding: 14px 16px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #0a2540;
+}
+
+.contactInput:focus,
+.contactTextarea:focus {
+  outline: none;
+  border-color: #635bff;
+}
+
+.contactButton {
+  background: #635bff;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(99, 91, 255, 0.3);
+}
+
+@media (max-width: 700px) {
+  .contactSection {
+    padding: 60px 24px;
+  }
+
+  .contactHeading {
+    font-size: 28px;
+  }
+}
+.contactSuccess {
+  color: #16a34a;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.contactError {
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.contactHoneypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}

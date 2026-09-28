@@ -1,0 +1,29 @@
+.pageLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: #425466;
+  font-size: 16px;
+}
+
+.pageTransition {
+  animation: pageFadeIn 0.5s ease;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pageTransition {
+    animation: none;
+  }
+}

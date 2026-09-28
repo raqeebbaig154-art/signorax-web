@@ -1,0 +1,87 @@
+.previewSection {
+  padding: 100px 64px;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.previewHeading {
+  font-size: 40px;
+  font-weight: 800;
+  color: #0a2540;
+  margin-bottom: 12px;
+}
+
+.previewHighlight {
+  background: linear-gradient(90deg, #635bff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.previewSubheading {
+  font-size: 17px;
+  color: #425466;
+  margin-bottom: 64px;
+}
+
+.previewBlock {
+  margin-bottom: 80px;
+}
+
+.previewBlockHeading {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0a2540;
+  margin-bottom: 8px;
+}
+
+.previewBlockNote {
+  font-size: 15px;
+  color: #425466;
+  margin-bottom: 32px;
+}
+
+.previewVideoCard {
+  background: white;
+  border-radius: 20px;
+  padding: 12px;
+  box-shadow: 0 20px 40px rgba(10, 37, 64, 0.1);
+  max-width: 640px;
+  margin: 0 auto;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.previewVideoCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 50px rgba(10, 37, 64, 0.16);
+}
+
+.previewVideoPlaceholder {
+  height: 320px;
+  background: linear-gradient(135deg, #0a2540, #1a3a5c);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+@media (max-width: 700px) {
+  .previewSection {
+    padding: 60px 24px;
+  }
+
+  .previewHeading {
+    font-size: 28px;
+  }
+
+  .previewBlockHeading {
+    font-size: 20px;
+  }
+
+  .previewVideoPlaceholder {
+    height: 220px;
+  }
+}

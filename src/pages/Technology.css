@@ -1,0 +1,106 @@
+.techSection {
+  padding: 100px 64px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.techHeading {
+  font-size: 40px;
+  font-weight: 800;
+  color: #0a2540;
+  margin-bottom: 16px;
+}
+
+.techHighlight {
+  background: linear-gradient(90deg, #635bff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.techIntro {
+  font-size: 18px;
+  color: #425466;
+  line-height: 1.6;
+  max-width: 640px;
+  margin-bottom: 56px;
+}
+
+.techGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.techCard {
+  background: white;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 20px 40px rgba(10, 37, 64, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.techCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 50px rgba(10, 37, 64, 0.16);
+}
+
+.techIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 20px;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.techIconBlue {
+  background: linear-gradient(135deg, #635bff, #7a73ff);
+}
+
+.techIconPurple {
+  background: linear-gradient(135deg, #7a73ff, #a78bfa);
+}
+
+.techIconCyan {
+  background: linear-gradient(135deg, #00d4ff, #635bff);
+}
+
+.techIconGradient {
+  background: linear-gradient(135deg, #0a2540, #635bff);
+}
+
+.techCard h3 {
+  color: #0a2540;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.techCard p {
+  color: #425466;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .techSection {
+    padding: 60px 24px;
+  }
+
+  .techHeading {
+    font-size: 28px;
+  }
+
+  .techIntro {
+    font-size: 16px;
+    margin-bottom: 40px;
+  }
+
+  .techCard {
+    padding: 24px 20px;
+  }
+}

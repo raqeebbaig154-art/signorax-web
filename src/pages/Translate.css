@@ -1,0 +1,231 @@
+.translateSection {
+  padding: 100px 64px;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.translateHeading {
+  font-size: 40px;
+  font-weight: 800;
+  color: #0a2540;
+  margin-bottom: 56px;
+}
+
+.translateHighlight {
+  background: linear-gradient(90deg, #635bff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.modeOptions {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.modeCard {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 32px;
+  width: 280px;
+  box-shadow: 0 20px 40px rgba(10, 37, 64, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+  border-top: 4px solid transparent;
+}
+
+.modeCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 28px 50px rgba(10, 37, 64, 0.16);
+}
+
+.modeCardBlue {
+  border-top-color: #635bff;
+}
+
+.modeCardPurple {
+  border-top-color: #00d4ff;
+}
+
+.modeIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 20px;
+  color: white;
+  margin: 0 auto 20px;
+}
+
+.modeIconBlue {
+  background: linear-gradient(135deg, #635bff, #7a73ff);
+}
+
+.modeIconPurple {
+  background: linear-gradient(135deg, #00d4ff, #635bff);
+}
+
+.modeCard h3 {
+  color: #0a2540;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.modeCard p {
+  color: #425466;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.modeCardExit {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+.modeInterface {
+  margin-top: 0;
+  background: white;
+  border-radius: 24px;
+  padding: 48px;
+  box-shadow: 0 20px 40px rgba(10, 37, 64, 0.1);
+  border-top: 4px solid #635bff;
+  animation: fadeIn 0.4s ease;
+}
+
+.modeInterface h2 {
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #635bff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 12px;
+}
+
+.modeNote {
+  color: #425466;
+  margin-bottom: 24px;
+}
+
+.backButton {
+  background: transparent;
+  border: 1px solid #635bff;
+  color: #635bff;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cameraFeed {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 16px;
+  margin: 24px auto;
+  display: block;
+  transform: scaleX(-1);
+  box-shadow: 0 12px 28px rgba(10, 37, 64, 0.18);
+  border: 2px solid #e0e6ed;
+}
+
+.predictionDisplay {
+  margin: 16px 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.predictedWord {
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #635bff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.predictedWordPlaceholder {
+  font-size: 15px;
+  color: #425466;
+}
+
+.sentenceDisplay {
+  margin-top: 12px;
+  padding: 20px;
+  background: #f6f9fc;
+  border-radius: 12px;
+  min-height: 60px;
+}
+
+.sentenceTextarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  color: #0a2540;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.sentenceTextarea::placeholder {
+  font-size: 14px;
+  font-weight: 400;
+  color: #8592a6;
+}
+
+.clearButton {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.landmarkDebug {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  font-size: 13px;
+  color: #425466;
+  margin-bottom: 12px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .translateSection {
+    padding: 60px 24px;
+  }
+
+  .translateHeading {
+    font-size: 28px;
+    margin-bottom: 40px;
+  }
+
+  .modeCard {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .modeInterface {
+    padding: 32px 24px;
+  }
+}
