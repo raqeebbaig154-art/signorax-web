@@ -2,16 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import * as tf from '@tensorflow/tfjs'
 
 // ─────────────────────────────────────────────────────────────────────────
-// Custom layer registration
+// Custom layer registration (unchanged from your working version)
 // ─────────────────────────────────────────────────────────────────────────
-// The model's attention_block() uses a Keras Lambda layer:
-//   layers.Lambda(lambda t: tf.reduce_sum(t, axis=1))(context)
-// TF.js can't deserialize arbitrary Python Lambda functions automatically
-// (that's what "Unknown layer: Lambda" means), so we register a JS class
-// that performs the exact same operation, summing across the time axis
-// (axis 1) to collapse (batch, 30, units) into (batch, units), and tell
-// TF.js to use it for every layer whose saved class_name is "Lambda".
-// There is only one Lambda layer in this model, so this is safe.
 class TemporalSum extends tf.layers.Layer {
   static className = 'Lambda'
 
@@ -34,18 +26,9 @@ class TemporalSum extends tf.layers.Layer {
 try {
   tf.serialization.registerClass(TemporalSum)
 } catch (err) {
-  // Already registered, happens harmlessly during Vite hot-reload
-  // when this module gets re-evaluated without a full page refresh.
+  // Already registered (Vite hot-reload)
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// The model's attention_block() also uses layers.Softmax(axis=1) to
-// normalize attention scores across the 30 timesteps, but TF.js's built-in
-// Softmax layer only supports softmax along the LAST axis and throws
-// ("Softmax along a non-last dimension is not yet supported") on this
-// (batch, 30, 1) tensor. Rather than fight over which "Softmax" wins
-// registration, model.json's class_name for this one layer was renamed to
-// "TimeSoftmax" (see setup instructions) so it's guaranteed to route here.
 class TimeSoftmax extends tf.layers.Layer {
   static className = 'TimeSoftmax'
 
@@ -82,28 +65,22 @@ class TimeSoftmax extends tf.layers.Layer {
 try {
   tf.serialization.registerClass(TimeSoftmax)
 } catch (err) {
-  // Already registered, harmless during hot-reload
+  // Already registered (Vite hot-reload)
 }
 
 const MODEL_URL = '/model/model.json'
 const LABELS_URL = '/model/labels.json'
-const PREDICT_INTERVAL_MS = 300   // how often to run inference once the buffer is full
-const CONFIDENCE_THRESHOLD = 0.6  // below this, treat as "not confident enough" rather than showing a wrong word
 
-// Usage:
-//   const { predictedWord, confidence, isModelReady, confirmedWord } =
-//     useSignPrediction(getFeatureBuffer, isBufferFull, isActive)
-//
-// getFeatureBuffer : the function returned by useHandLandmarks, call it to
-//                    get the current (30, 252) buffer as an array of frames
-// isBufferFull     : from useHandLandmarks
-// isActive         : true while in signToText mode
-// confirmedWord    : { word, id } fired once a word has held steady for
-//                    2 consecutive prediction cycles. The id is a fresh
-//                    timestamp every time, so consumers can reliably
-//                    react to it even if the same word is confirmed twice
-//                    in a row (React skips re-renders on identical state,
-//                    so a plain repeated string would be silently missed).
+// ── Settings you can tune ────────────────────────────────────────────────
+// Wait this long AFTER a prediction finishes before starting the next one
+const PREDICT_GAP_MS = 30
+// A guess must be at least this confident to count
+const CONFIDENCE_THRESHOLD = 0.85
+// The same word must win this many times in a row before it is shown.
+// Higher = fewer random words between signs, but a slightly slower result.
+const CONFIRM_COUNT = 3
+// Logs how long one prediction takes, once every 10 predictions
+const DEBUG = true
 
 export function useSignPrediction(getFeatureBuffer, isBufferFull, isActive) {
   const [isModelReady, setIsModelReady] = useState(false)
@@ -113,21 +90,33 @@ export function useSignPrediction(getFeatureBuffer, isBufferFull, isActive) {
 
   const modelRef = useRef(null)
   const labelsRef = useRef(null)
-  const intervalRef = useRef(null)
   const stableWordRef = useRef(null)
   const stableCountRef = useRef(0)
+  const lastConfirmedRef = useRef(null)
 
   // Load model + labels once.
   useEffect(() => {
     let cancelled = false
 
     async function load() {
+      await tf.ready()
+
       const [model, labelsResponse] = await Promise.all([
         tf.loadLayersModel(MODEL_URL),
         fetch(LABELS_URL).then((res) => res.json()),
       ])
 
-      if (cancelled) return
+      if (cancelled) {
+        model.dispose()
+        return
+      }
+
+      // Warm-up: the very first prediction is always slow (WebGL compiles
+      // its shaders), so we do it now, before the user signs.
+      tf.tidy(() => {
+        const warm = model.predict(tf.zeros([1, 30, 252]))
+        warm.dataSync()
+      })
 
       modelRef.current = model
       labelsRef.current = labelsResponse
@@ -147,68 +136,100 @@ export function useSignPrediction(getFeatureBuffer, isBufferFull, isActive) {
     }
   }, [])
 
-  // Run throttled prediction while active and the buffer is full.
+  // Prediction loop while active and the buffer is full.
   useEffect(() => {
     if (!isActive || !isModelReady || !isBufferFull) {
       setPredictedWord(null)
       setConfidence(0)
+      stableWordRef.current = null
+      stableCountRef.current = 0
+      lastConfirmedRef.current = null
       return
     }
 
-    function runPrediction() {
+    let cancelled = false
+    let timer = null
+    let count = 0
+
+    async function runPrediction() {
       const model = modelRef.current
       const labels = labelsRef.current
-      const buffer = getFeatureBuffer() // array of 30 Float32Array(252)
+      const buffer = getFeatureBuffer()
 
       if (!model || !labels || buffer.length !== 30) return
 
-      tf.tidy(() => {
-        // Shape (1, 30, 252), batch of 1, 30 timesteps, 252 features
-        const flat = new Float32Array(30 * 252)
-        buffer.forEach((frame, i) => flat.set(frame, i * 252))
+      const t0 = performance.now()
 
-        const inputTensor = tf.tensor3d(flat, [1, 30, 252])
-        const output = model.predict(inputTensor)
-        const probabilities = output.dataSync()
+      const flat = new Float32Array(30 * 252)
+      buffer.forEach((frame, i) => flat.set(frame, i * 252))
 
-        let bestIdx = 0
-        let bestScore = probabilities[0]
-        for (let i = 1; i < probabilities.length; i++) {
-          if (probabilities[i] > bestScore) {
-            bestScore = probabilities[i]
-            bestIdx = i
-          }
+      const inputTensor = tf.tensor3d(flat, [1, 30, 252])
+      const output = model.predict(inputTensor)
+      // .data() is async, so the page keeps drawing the camera while
+      // the model works (dataSync() froze the whole page)
+      const probabilities = await output.data()
+      inputTensor.dispose()
+      output.dispose()
+
+      if (cancelled) return
+
+      if (DEBUG && ++count % 10 === 0) {
+        console.log(`[predict] ${(performance.now() - t0).toFixed(0)} ms per prediction`)
+      }
+
+      let bestIdx = 0
+      let bestScore = probabilities[0]
+      for (let i = 1; i < probabilities.length; i++) {
+        if (probabilities[i] > bestScore) {
+          bestScore = probabilities[i]
+          bestIdx = i
+        }
+      }
+
+      setConfidence(bestScore)
+
+      if (bestScore >= CONFIDENCE_THRESHOLD) {
+        const word = labels[bestIdx]
+
+        if (word === stableWordRef.current) {
+          stableCountRef.current += 1
+        } else {
+          stableWordRef.current = word
+          stableCountRef.current = 1
         }
 
-        if (bestScore >= CONFIDENCE_THRESHOLD) {
-          const word = labels[bestIdx]
+        // Only show and confirm a word once it has held steady
+        if (stableCountRef.current >= CONFIRM_COUNT) {
           setPredictedWord(word)
-          setConfidence(bestScore)
 
-          if (word === stableWordRef.current) {
-            stableCountRef.current += 1
-          } else {
-            stableWordRef.current = word
-            stableCountRef.current = 1
-          }
-
-          if (stableCountRef.current === 2) {
+          // Add to the sentence once, and not again until the hand
+          // leaves or a different word is confirmed
+          if (word !== lastConfirmedRef.current) {
+            lastConfirmedRef.current = word
             setConfirmedWord({ word, id: Date.now() })
           }
-        } else {
-          setPredictedWord(null)
-          setConfidence(bestScore)
-          stableWordRef.current = null
-          stableCountRef.current = 0
         }
-      })
+      } else {
+        stableWordRef.current = null
+        stableCountRef.current = 0
+      }
     }
 
-    runPrediction() // run immediately once the buffer first fills
-    intervalRef.current = setInterval(runPrediction, PREDICT_INTERVAL_MS)
+    async function loop() {
+      if (cancelled) return
+      try {
+        await runPrediction()
+      } catch (err) {
+        console.error('Prediction failed:', err)
+      }
+      if (!cancelled) timer = setTimeout(loop, PREDICT_GAP_MS)
+    }
+
+    loop()
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      cancelled = true
+      if (timer) clearTimeout(timer)
     }
   }, [isActive, isModelReady, isBufferFull, getFeatureBuffer])
 

@@ -1,0 +1,2507 @@
+{
+ "Help": {
+  "R": {
+   "palm": "left_left_left_up",
+   "shape": "thumbup_fist",
+   "thumb_dir": "up"
+  },
+  "L": {
+   "palm": "up",
+   "shape": "flat",
+   "thumb": "steady"
+  },
+  "contact": {
+   "hand": "R",
+   "onto": "L",
+   "gap": -0.02
+  }
+ },
+ "ThankYou": {
+  "R": {
+   "palm": [
+    [
+     0.0,
+     "back"
+    ],
+    [
+     0.27,
+     "back"
+    ],
+    [
+     0.34,
+     "up"
+    ],
+    [
+     0.48,
+     "up"
+    ],
+    [
+     0.6,
+     "back"
+    ],
+    [
+     0.74,
+     "back"
+    ],
+    [
+     0.82,
+     "up"
+    ],
+    [
+     0.93,
+     "up"
+    ],
+    [
+     1.0,
+     "back"
+    ]
+   ],
+   "shape": [
+    [
+     0.0,
+     "flat"
+    ],
+    [
+     0.27,
+     "flat"
+    ],
+    [
+     0.34,
+     "relaxed"
+    ],
+    [
+     0.48,
+     "relaxed"
+    ],
+    [
+     0.6,
+     "flat"
+    ],
+    [
+     0.74,
+     "flat"
+    ],
+    [
+     0.82,
+     "relaxed"
+    ],
+    [
+     0.93,
+     "relaxed"
+    ],
+    [
+     1.0,
+     "flat"
+    ]
+   ],
+   "thumb": "steady",
+   "axis": [
+    [
+     0.0,
+     "up"
+    ],
+    [
+     0.27,
+     "up"
+    ],
+    [
+     0.34,
+     "forward_forward_up"
+    ],
+    [
+     0.48,
+     "forward_forward_up"
+    ],
+    [
+     0.6,
+     "up"
+    ],
+    [
+     0.74,
+     "up"
+    ],
+    [
+     0.82,
+     "forward_forward_up"
+    ],
+    [
+     0.93,
+     "forward_forward_up"
+    ],
+    [
+     1.0,
+     "up"
+    ]
+   ]
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "R",
+    "point": "chin",
+    "from": 0.1,
+    "until": 0.95,
+    "ramp": 0.05,
+    "offset": [
+     [
+      0.1,
+      [
+       -0.04,
+       -0.22,
+       0.02
+      ]
+     ],
+     [
+      0.14,
+      [
+       -0.04,
+       -0.22,
+       0.02
+      ]
+     ],
+     [
+      0.28,
+      [
+       -0.04,
+       -0.22,
+       0.02
+      ]
+     ],
+     [
+      0.34,
+      [
+       -0.04,
+       -0.27,
+       0.1
+      ]
+     ],
+     [
+      0.48,
+      [
+       -0.04,
+       -0.27,
+       0.1
+      ]
+     ],
+     [
+      0.58,
+      [
+       -0.04,
+       -0.22,
+       0.02
+      ]
+     ],
+     [
+      0.77,
+      [
+       -0.04,
+       -0.22,
+       0.02
+      ]
+     ],
+     [
+      0.83,
+      [
+       -0.04,
+       -0.27,
+       0.1
+      ]
+     ],
+     [
+      0.93,
+      [
+       -0.04,
+       -0.27,
+       0.1
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "Hello": {
+  "R": {
+   "palm": "forward",
+   "shape": "flat",
+   "thumb": "steady",
+   "axis": "up"
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Yes": {
+  "R": {
+   "palm": [
+    [
+     0,
+     "back"
+    ],
+    [
+     0.665,
+     "back"
+    ],
+    [
+     0.749,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.204,
+     "relaxed"
+    ],
+    [
+     0.26,
+     "fist"
+    ],
+    [
+     0.665,
+     "fist"
+    ],
+    [
+     0.735,
+     "flat"
+    ],
+    [
+     1,
+     "flat"
+    ]
+   ],
+   "thumb": "steady",
+   "axis": [
+    [
+     0,
+     "left"
+    ],
+    [
+     0.246,
+     "left_down"
+    ],
+    [
+     0.313,
+     "left"
+    ],
+    [
+     0.344,
+     "left_left_left_up"
+    ],
+    [
+     0.385,
+     "left_left_left_down"
+    ],
+    [
+     0.441,
+     "left_left_left_up"
+    ],
+    [
+     0.511,
+     "left_left_left_down"
+    ],
+    [
+     0.567,
+     "left_left_left_up"
+    ],
+    [
+     0.623,
+     "left_left_left_down"
+    ],
+    [
+     0.665,
+     "left"
+    ],
+    [
+     0.749,
+     "left_down"
+    ],
+    [
+     1.0,
+     "left_down"
+    ]
+   ]
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Sorry": {
+  "R": {
+   "palm": "back",
+   "shape": "fist",
+   "thumb": "steady",
+   "axis": "left",
+   "thumb_dir": "left"
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "No": {
+  "R": {
+   "palm": "left",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "L": {
+   "palm": [
+    [
+     0,
+     "right_down_down_forward_forward_forward"
+    ],
+    [
+     0.72,
+     "right_down_down_forward_forward_forward"
+    ],
+    [
+     0.85,
+     "right"
+    ],
+    [
+     1,
+     "right"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.15,
+     "fist"
+    ],
+    [
+     0.72,
+     "fist"
+    ],
+    [
+     0.85,
+     "relaxed"
+    ],
+    [
+     1,
+     "relaxed"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "right_up_up_up_forward_forward"
+    ],
+    [
+     0.72,
+     "right_up_up_up_forward_forward"
+    ],
+    [
+     0.85,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ],
+   "thumb": "steady",
+   "thumb_dir": [
+    [
+     0,
+     "up_left_forward"
+    ],
+    [
+     0.72,
+     "up_left_forward"
+    ],
+    [
+     0.88,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ]
+  },
+  "touch": [
+   {
+    "hand": "L",
+    "point": [
+     0.3,
+     1.3,
+     0.1
+    ],
+    "from": 0.14,
+    "until": 0.74,
+    "ramp": 0.08
+   }
+  ]
+ },
+ "Sit": {
+  "R": {
+   "palm": "left_back",
+   "shape": "fist",
+   "thumb": "steady",
+   "thumb_dir": "left"
+  },
+  "L": {
+   "palm": "up",
+   "shape": "flat",
+   "thumb": "steady",
+   "axis": "right"
+  },
+  "contact": {
+   "hand": "R",
+   "onto": "L",
+   "gap": -0.02
+  }
+ },
+ "Please": {
+  "R": {
+   "palm": "back",
+   "shape": "flat",
+   "thumb": "steady",
+   "axis": "left"
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Eat": {
+  "R": {
+   "palm": "back",
+   "shape": "claw",
+   "thumb": "steady",
+   "axis": "up_up_back",
+   "thumb_dir": "up_left_back"
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "R",
+    "point": "mouth",
+    "from": 0.2,
+    "until": 0.8,
+    "ramp": 0.06,
+    "offset": [
+     [
+      0.2,
+      [
+       -0.02,
+       -0.21,
+       0.05
+      ]
+     ],
+     [
+      0.288,
+      [
+       -0.02,
+       -0.21,
+       0.05
+      ]
+     ],
+     [
+      0.418,
+      [
+       -0.02,
+       -0.28,
+       0.06
+      ]
+     ],
+     [
+      0.524,
+      [
+       -0.02,
+       -0.21,
+       0.05
+      ]
+     ],
+     [
+      0.654,
+      [
+       -0.02,
+       -0.28,
+       0.06
+      ]
+     ],
+     [
+      0.749,
+      [
+       -0.02,
+       -0.21,
+       0.05
+      ]
+     ],
+     [
+      0.808,
+      [
+       -0.02,
+       -0.28,
+       0.06
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "Sad": {
+  "L": {
+   "palm": "back",
+   "axis": "up",
+   "shape": [
+    [
+     0.0,
+     "flat"
+    ],
+    [
+     0.22,
+     "flat"
+    ],
+    [
+     0.36,
+     "relaxed"
+    ],
+    [
+     0.42,
+     "c"
+    ],
+    [
+     0.47,
+     "claw"
+    ],
+    [
+     1.0,
+     "claw"
+    ]
+   ],
+   "spread": [
+    [
+     0,
+     0
+    ],
+    [
+     0.2,
+     0
+    ],
+    [
+     0.26,
+     1.0
+    ],
+    [
+     0.35,
+     1.0
+    ],
+    [
+     0.4,
+     -0.8
+    ],
+    [
+     0.45,
+     -1.5
+    ],
+    [
+     1,
+     -1.5
+    ]
+   ],
+   "thumb_dir": [
+    [
+     0,
+     "up_left"
+    ],
+    [
+     0.2,
+     "up_left"
+    ],
+    [
+     0.35,
+     "up_left"
+    ],
+    [
+     0.44,
+     "up_up_right_back"
+    ],
+    [
+     1,
+     "up_up_right_back"
+    ]
+   ],
+   "pinch": [
+    [
+     0,
+     0
+    ],
+    [
+     0.4,
+     0
+    ],
+    [
+     0.47,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ]
+  },
+  "R": {
+   "palm": "left",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Happy": {
+  "R": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "L": {
+   "palm": [
+    [
+     0,
+     "back"
+    ],
+    [
+     0.7,
+     "back"
+    ],
+    [
+     0.8,
+     "right"
+    ],
+    [
+     1,
+     "right"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.22,
+     "claw"
+    ],
+    [
+     0.4,
+     "claw"
+    ],
+    [
+     0.47,
+     "relaxed"
+    ],
+    [
+     0.7,
+     "relaxed"
+    ],
+    [
+     0.76,
+     "relaxed"
+    ],
+    [
+     1,
+     "relaxed"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "forward"
+    ],
+    [
+     0.19,
+     "up"
+    ],
+    [
+     0.7,
+     "up"
+    ],
+    [
+     0.8,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ],
+   "spread": [
+    [
+     0,
+     0
+    ],
+    [
+     0.22,
+     -1.5
+    ],
+    [
+     0.4,
+     -1.5
+    ],
+    [
+     0.47,
+     3.0
+    ],
+    [
+     0.7,
+     3.0
+    ],
+    [
+     0.76,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ],
+   "pinch": [
+    [
+     0,
+     0
+    ],
+    [
+     0.14,
+     0
+    ],
+    [
+     0.24,
+     1
+    ],
+    [
+     0.4,
+     1
+    ],
+    [
+     0.45,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ]
+  },
+  "touch": [
+   {
+    "hand": "L",
+    "point": "chest",
+    "from": 0.2,
+    "until": 0.76,
+    "ramp": 0.06,
+    "offset": [
+     [
+      0.2,
+      [
+       0.08,
+       -0.1,
+       0.12
+      ]
+     ],
+     [
+      0.36,
+      [
+       0.1,
+       -0.06,
+       0.14
+      ]
+     ],
+     [
+      0.47,
+      [
+       0.1,
+       -0.04,
+       0.16
+      ]
+     ],
+     [
+      0.7,
+      [
+       0.1,
+       -0.04,
+       0.16
+      ]
+     ],
+     [
+      0.76,
+      [
+       0.08,
+       -0.1,
+       0.12
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "What": {
+  "R": {
+   "palm": "back",
+   "shape": "v",
+   "thumb": "steady",
+   "axis": "up_up_left",
+   "thumb_dir": "up_up_right",
+   "gather": -0.7
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "R",
+    "point": [
+     -0.07,
+     1.15,
+     0.31
+    ],
+    "from": 0.28,
+    "until": 0.78,
+    "ramp": 0.05,
+    "offset": [
+     [
+      0.28,
+      [
+       0,
+       0,
+       0
+      ]
+     ],
+     [
+      0.36,
+      [
+       0.05,
+       0,
+       0
+      ]
+     ],
+     [
+      0.46,
+      [
+       -0.05,
+       0,
+       0
+      ]
+     ],
+     [
+      0.56,
+      [
+       0.05,
+       0,
+       0
+      ]
+     ],
+     [
+      0.66,
+      [
+       -0.05,
+       0,
+       0
+      ]
+     ],
+     [
+      0.76,
+      [
+       0,
+       0,
+       0
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "Bad": {
+  "L": {
+   "palm": [
+    [
+     0,
+     "right_right_right_up_forward_forward"
+    ],
+    [
+     0.261,
+     "right_right_right_up_forward_forward"
+    ],
+    [
+     0.33,
+     "right_right_right_up_forward_forward"
+    ],
+    [
+     0.415,
+     "right_right_right_up_forward_forward"
+    ],
+    [
+     0.466,
+     "forward"
+    ],
+    [
+     0.636,
+     "forward"
+    ],
+    [
+     0.739,
+     "right"
+    ],
+    [
+     1,
+     "right"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "up"
+    ],
+    [
+     0.261,
+     "up"
+    ],
+    [
+     0.33,
+     "up"
+    ],
+    [
+     0.415,
+     "up"
+    ],
+    [
+     0.466,
+     "up"
+    ],
+    [
+     0.636,
+     "up"
+    ],
+    [
+     0.739,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.261,
+     "relaxed"
+    ],
+    [
+     0.33,
+     "fist"
+    ],
+    [
+     0.415,
+     "fist"
+    ],
+    [
+     0.466,
+     "flat"
+    ],
+    [
+     0.636,
+     "flat"
+    ],
+    [
+     0.739,
+     "relaxed"
+    ],
+    [
+     1,
+     "relaxed"
+    ]
+   ],
+   "thumb": "steady",
+   "thumb_dir": [
+    [
+     0,
+     "forward"
+    ],
+    [
+     0.415,
+     "forward"
+    ],
+    [
+     0.466,
+     "right"
+    ],
+    [
+     0.636,
+     "right"
+    ],
+    [
+     0.739,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ]
+  },
+  "R": {
+   "palm": "left",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "L",
+    "point": "mouth",
+    "from": 0.227,
+    "until": 0.858,
+    "ramp": 0.06,
+    "offset": [
+     [
+      0.261,
+      [
+       0.12,
+       -0.32,
+       0.06
+      ]
+     ],
+     [
+      0.33,
+      [
+       0.08,
+       -0.26,
+       0.0
+      ]
+     ],
+     [
+      0.381,
+      [
+       0.08,
+       -0.26,
+       0.0
+      ]
+     ],
+     [
+      0.432,
+      [
+       0.08,
+       -0.26,
+       0.0
+      ]
+     ],
+     [
+      0.483,
+      [
+       0.14,
+       -0.28,
+       0.12
+      ]
+     ],
+     [
+      0.636,
+      [
+       0.14,
+       -0.28,
+       0.12
+      ]
+     ],
+     [
+      0.739,
+      [
+       0.2,
+       -0.42,
+       0.06
+      ]
+     ],
+     [
+      0.807,
+      [
+       0.26,
+       -0.55,
+       0.03
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "More": {
+  "R": {
+   "palm": [
+    [
+     0,
+     "back"
+    ],
+    [
+     0.34,
+     "back"
+    ],
+    [
+     0.43,
+     "up"
+    ],
+    [
+     0.7,
+     "up"
+    ],
+    [
+     0.74,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.38,
+     "relaxed"
+    ],
+    [
+     0.44,
+     "c"
+    ],
+    [
+     0.7,
+     "c"
+    ],
+    [
+     0.74,
+     "flat"
+    ],
+    [
+     1,
+     "flat"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "left"
+    ],
+    [
+     0.2,
+     "left"
+    ],
+    [
+     0.263,
+     "left_left_left_up"
+    ],
+    [
+     0.295,
+     "left_up"
+    ],
+    [
+     0.327,
+     "left_up_up"
+    ],
+    [
+     0.39,
+     "left_up_up"
+    ],
+    [
+     0.49,
+     "left_up_up"
+    ],
+    [
+     0.7,
+     "left_up_up"
+    ],
+    [
+     0.74,
+     "left"
+    ],
+    [
+     1,
+     "left_down"
+    ]
+   ],
+   "thumb": "steady"
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "R",
+    "point": "chest",
+    "from": 0.2,
+    "until": 0.84,
+    "ramp": 0.06,
+    "offset": [
+     [
+      0.2,
+      [
+       -0.155,
+       -0.273,
+       0.155
+      ]
+     ],
+     [
+      0.24,
+      [
+       -0.132,
+       -0.161,
+       0.177
+      ]
+     ],
+     [
+      0.28,
+      [
+       -0.136,
+       -0.106,
+       0.201
+      ]
+     ],
+     [
+      0.36,
+      [
+       -0.132,
+       -0.083,
+       0.197
+      ]
+     ],
+     [
+      0.44,
+      [
+       -0.115,
+       -0.123,
+       0.195
+      ]
+     ],
+     [
+      0.52,
+      [
+       -0.104,
+       -0.146,
+       0.168
+      ]
+     ],
+     [
+      0.6,
+      [
+       -0.104,
+       -0.148,
+       0.162
+      ]
+     ],
+     [
+      0.64,
+      [
+       -0.104,
+       -0.148,
+       0.164
+      ]
+     ],
+     [
+      0.68,
+      [
+       -0.103,
+       -0.148,
+       0.142
+      ]
+     ],
+     [
+      0.73,
+      [
+       -0.102,
+       -0.156,
+       0.283
+      ]
+     ],
+     [
+      0.78,
+      [
+       -0.102,
+       -0.225,
+       0.258
+      ]
+     ],
+     [
+      0.84,
+      [
+       -0.162,
+       -0.323,
+       0.143
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "Stand": {
+  "R": {
+   "palm": "up",
+   "shape": "flat",
+   "thumb": "steady",
+   "axis": "left"
+  },
+  "L": {
+   "palm": "back",
+   "shape": "v",
+   "thumb": "steady",
+   "axis": "down",
+   "thumb_dir": "down"
+  },
+  "touch": [
+   {
+    "hand": "R",
+    "point": [
+     -0.08,
+     0.945,
+     0.255
+    ],
+    "from": 0.2,
+    "until": 0.76,
+    "ramp": 0.06,
+    "offset": [
+     [
+      0.2,
+      [
+       0,
+       0.09,
+       0
+      ]
+     ],
+     [
+      0.28,
+      [
+       0,
+       0.075,
+       0
+      ]
+     ],
+     [
+      0.4,
+      [
+       0,
+       0,
+       0
+      ]
+     ],
+     [
+      0.7,
+      [
+       0,
+       0,
+       0
+      ]
+     ],
+     [
+      0.76,
+      [
+       0,
+       0.02,
+       0
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "You": {
+  "R": {
+   "palm": "left_down",
+   "shape": "point",
+   "thumb": "steady",
+   "axis": [
+    [
+     0,
+     "down"
+    ],
+    [
+     0.2,
+     "down"
+    ],
+    [
+     0.3,
+     "forward"
+    ],
+    [
+     0.65,
+     "forward"
+    ],
+    [
+     0.78,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ]
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Me": {
+  "R": {
+   "palm": "down_back",
+   "shape": "point",
+   "thumb": "steady",
+   "axis": [
+    [
+     0,
+     "left_down"
+    ],
+    [
+     0.28,
+     "left_left_back"
+    ],
+    [
+     0.72,
+     "left_left_back"
+    ],
+    [
+     1,
+     "left_down"
+    ]
+   ]
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "R",
+    "point": "chest",
+    "from": 0.3,
+    "until": 0.7,
+    "ramp": 0.06,
+    "offset": [
+     [
+      0.3,
+      [
+       -0.12,
+       -0.04,
+       0.18
+      ]
+     ],
+     [
+      0.7,
+      [
+       -0.12,
+       -0.04,
+       0.18
+      ]
+     ]
+    ]
+   }
+  ]
+ },
+ "Good": {
+  "L": {
+   "palm": "right",
+   "shape": "thumbup_fist",
+   "thumb": "steady",
+   "thumb_dir": "up"
+  },
+  "R": {
+   "palm": "left",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Come": {
+  "stable": true,
+  "L": {
+   "palm": "forward",
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.12,
+     "flat"
+    ],
+    [
+     0.26,
+     "flat"
+    ],
+    [
+     0.32,
+     "fist"
+    ],
+    [
+     0.42,
+     "fist"
+    ],
+    [
+     0.5,
+     "flat"
+    ],
+    [
+     0.6,
+     "flat"
+    ],
+    [
+     0.68,
+     "fist"
+    ],
+    [
+     0.78,
+     "fist"
+    ],
+    [
+     0.88,
+     "relaxed"
+    ],
+    [
+     1,
+     "relaxed"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "up"
+    ],
+    [
+     0.26,
+     "up"
+    ],
+    [
+     0.32,
+     "up_forward"
+    ],
+    [
+     0.42,
+     "up_forward"
+    ],
+    [
+     0.5,
+     "up"
+    ],
+    [
+     0.6,
+     "up"
+    ],
+    [
+     0.68,
+     "up_forward"
+    ],
+    [
+     0.78,
+     "up_forward"
+    ],
+    [
+     0.88,
+     "up"
+    ],
+    [
+     1,
+     "up"
+    ]
+   ],
+   "thumb": "steady"
+  },
+  "R": {
+   "palm": "left",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ },
+ "Go": {
+  "stable": true,
+  "L": {
+   "palm": [
+    [
+     0,
+     "down"
+    ],
+    [
+     0.13,
+     "down"
+    ],
+    [
+     0.15,
+     "back"
+    ],
+    [
+     0.21,
+     "back"
+    ],
+    [
+     0.25,
+     "down"
+    ],
+    [
+     0.31,
+     "down"
+    ],
+    [
+     0.36,
+     "back"
+    ],
+    [
+     0.45,
+     "back"
+    ],
+    [
+     0.5,
+     "down"
+    ],
+    [
+     0.56,
+     "down"
+    ],
+    [
+     0.6,
+     "back"
+    ],
+    [
+     0.7,
+     "back"
+    ],
+    [
+     0.75,
+     "down"
+    ],
+    [
+     0.86,
+     "down"
+    ],
+    [
+     1,
+     "down"
+    ]
+   ],
+   "shape": "flat",
+   "axis": "right_right_right_right_forward",
+   "thumb": "steady"
+  },
+  "R": {
+   "palm": "left",
+   "shape": "relaxed",
+   "thumb": "steady"
+  },
+  "touch": [
+   {
+    "hand": "L",
+    "point": "chest",
+    "from": 0.14,
+    "until": 0.9,
+    "ramp": 0.08,
+    "offset": [
+     0.1,
+     -0.03,
+     0.17
+    ]
+   }
+  ]
+ },
+ "Tired": {
+  "R": {
+   "palm": [
+    [
+     0,
+     "left_up"
+    ],
+    [
+     0.17,
+     "left_up"
+    ],
+    [
+     0.27,
+     "back_left"
+    ],
+    [
+     0.31,
+     "back"
+    ],
+    [
+     0.42,
+     "back"
+    ],
+    [
+     0.47,
+     "up_back"
+    ],
+    [
+     0.55,
+     "up"
+    ],
+    [
+     1,
+     "up"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "up_forward"
+    ],
+    [
+     0.17,
+     "up_forward"
+    ],
+    [
+     0.27,
+     "up_up_left"
+    ],
+    [
+     0.31,
+     "up"
+    ],
+    [
+     0.42,
+     "up"
+    ],
+    [
+     0.47,
+     "up_forward"
+    ],
+    [
+     0.55,
+     "up_forward_left"
+    ],
+    [
+     0.7,
+     "up_forward_left"
+    ],
+    [
+     0.76,
+     "forward_forward_down_left"
+    ],
+    [
+     0.85,
+     "left_forward_forward"
+    ],
+    [
+     1,
+     "forward_down_left"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.42,
+     "relaxed"
+    ],
+    [
+     0.52,
+     "claw"
+    ],
+    [
+     0.7,
+     "claw"
+    ],
+    [
+     0.8,
+     "relaxed"
+    ],
+    [
+     1,
+     "relaxed"
+    ]
+   ],
+   "thumb": "steady",
+   "fan": true,
+   "gather": [
+    [
+     0.25,
+     0
+    ],
+    [
+     0.31,
+     -1.0
+    ],
+    [
+     0.42,
+     -1.0
+    ],
+    [
+     0.48,
+     0
+    ]
+   ]
+  },
+  "L": {
+   "palm": [
+    [
+     0,
+     "right_up"
+    ],
+    [
+     0.17,
+     "right_up"
+    ],
+    [
+     0.27,
+     "back_right"
+    ],
+    [
+     0.31,
+     "back"
+    ],
+    [
+     0.42,
+     "back"
+    ],
+    [
+     0.47,
+     "up_back"
+    ],
+    [
+     0.55,
+     "up"
+    ],
+    [
+     1,
+     "up"
+    ]
+   ],
+   "axis": [
+    [
+     0,
+     "up_forward"
+    ],
+    [
+     0.17,
+     "up_forward"
+    ],
+    [
+     0.27,
+     "up_up_right"
+    ],
+    [
+     0.31,
+     "up"
+    ],
+    [
+     0.42,
+     "up"
+    ],
+    [
+     0.47,
+     "up_forward"
+    ],
+    [
+     0.55,
+     "up_forward_right"
+    ],
+    [
+     0.7,
+     "up_forward_right"
+    ],
+    [
+     0.76,
+     "forward_forward_down_right"
+    ],
+    [
+     0.85,
+     "right_forward_forward"
+    ],
+    [
+     1,
+     "forward_down_right"
+    ]
+   ],
+   "shape": [
+    [
+     0,
+     "relaxed"
+    ],
+    [
+     0.42,
+     "relaxed"
+    ],
+    [
+     0.52,
+     "claw"
+    ],
+    [
+     0.7,
+     "claw"
+    ],
+    [
+     0.8,
+     "relaxed"
+    ],
+    [
+     1,
+     "relaxed"
+    ]
+   ],
+   "thumb": "steady",
+   "fan": true,
+   "gather": [
+    [
+     0.25,
+     0
+    ],
+    [
+     0.31,
+     -1.0
+    ],
+    [
+     0.42,
+     -1.0
+    ],
+    [
+     0.48,
+     0
+    ]
+   ]
+  }
+ },
+ "Medicine": {
+  "R": {
+   "palm": "down",
+   "shape": "touch"
+  },
+  "L": {
+   "palm": "up",
+   "shape": "flat",
+   "thumb": "steady"
+  },
+  "contact": {
+   "hand": "R",
+   "onto": "L",
+   "gap": 0.004
+  }
+ },
+ "Father": {
+  "face_track": {
+   "hand": "R",
+   "clear": 0.02,
+   "hand_w": 0.85
+  },
+  "R": {
+   "palm": [
+    [
+     0.0,
+     "left"
+    ],
+    [
+     0.14,
+     "left_back"
+    ],
+    [
+     0.52,
+     "left_back"
+    ],
+    [
+     0.6,
+     "back"
+    ],
+    [
+     0.85,
+     "back"
+    ],
+    [
+     1.0,
+     "left"
+    ]
+   ],
+   "shape": [
+    [
+     0.0,
+     "relaxed"
+    ],
+    [
+     0.1,
+     "relaxed"
+    ],
+    [
+     0.15,
+     "pinch"
+    ],
+    [
+     0.25,
+     "pinch"
+    ],
+    [
+     0.32,
+     "c"
+    ],
+    [
+     0.52,
+     "c"
+    ],
+    [
+     0.6,
+     "loose_fist"
+    ],
+    [
+     0.85,
+     "loose_fist"
+    ],
+    [
+     1.0,
+     "relaxed"
+    ]
+   ],
+   "thumb": "steady"
+  }
+ },
+ "Home": {
+  "R": {
+   "palm": [
+    [
+     0,
+     "left"
+    ],
+    [
+     0.27,
+     "down"
+    ],
+    [
+     0.36,
+     "left_down"
+    ],
+    [
+     0.6,
+     "left_down"
+    ],
+    [
+     0.7,
+     "left"
+    ],
+    [
+     1,
+     "left"
+    ]
+   ],
+   "shape": "flat",
+   "thumb": "steady",
+   "fingers": [
+    [
+     0,
+     "free"
+    ],
+    [
+     0.62,
+     "free"
+    ],
+    [
+     0.68,
+     "up"
+    ],
+    [
+     0.86,
+     "up"
+    ],
+    [
+     0.9,
+     "free"
+    ],
+    [
+     1,
+     "free"
+    ]
+   ]
+  },
+  "L": {
+   "palm": [
+    [
+     0,
+     "right"
+    ],
+    [
+     0.27,
+     "down"
+    ],
+    [
+     0.36,
+     "right_down"
+    ],
+    [
+     0.6,
+     "right_down"
+    ],
+    [
+     0.7,
+     "right"
+    ],
+    [
+     1,
+     "right"
+    ]
+   ],
+   "shape": "flat",
+   "thumb": "steady",
+   "fingers": [
+    [
+     0,
+     "free"
+    ],
+    [
+     0.62,
+     "free"
+    ],
+    [
+     0.68,
+     "up"
+    ],
+    [
+     0.86,
+     "up"
+    ],
+    [
+     0.9,
+     "free"
+    ],
+    [
+     1,
+     "free"
+    ]
+   ]
+  },
+  "touch": {
+   "gap": 0,
+   "from": 0.34,
+   "to": 0.58
+  }
+ },
+ "Water": {
+  "R": {
+   "palm": "left",
+   "shape": "thumbup_fist",
+   "thumb_dir": "up",
+   "thumb": "steady",
+   "push": 0,
+   "arm": {
+    "times": [
+     0.16,
+     0.29,
+     0.67,
+     0.8
+    ],
+    "upper": [
+     -0.15,
+     -0.4,
+     0.9
+    ],
+    "fore": [
+     0.62,
+     0.76,
+     -0.1
+    ],
+    "taps": 2,
+    "tap": 0.1
+   }
+  },
+  "L": {
+   "rest": true
+  }
+ },
+ "Angry": {
+  "R": {
+   "palm": "left",
+   "shape": "claw",
+   "thumb_dir": "up_left",
+   "thumb": "steady",
+   "push": 0,
+   "arm": {
+    "times": [
+     0.13,
+     0.345,
+     0.73,
+     0.88
+    ],
+    "upper": [
+     -0.55,
+     -0.72,
+     0.3
+    ],
+    "fore": [
+     0.28,
+     0.93,
+     0.15
+    ]
+   }
+  },
+  "L": {
+   "palm": "right",
+   "shape": "claw",
+   "thumb_dir": "up_right",
+   "thumb": "steady",
+   "push": 0,
+   "arm": {
+    "times": [
+     0.13,
+     0.345,
+     0.73,
+     0.88
+    ],
+    "upper": [
+     0.55,
+     -0.72,
+     0.3
+    ],
+    "fore": [
+     -0.28,
+     0.93,
+     0.15
+    ]
+   }
+  }
+ },
+ "Drink": {
+  "R": {
+   "palm": [
+    [
+     0.0,
+     "left"
+    ],
+    [
+     0.24,
+     "left"
+    ],
+    [
+     0.37,
+     "left"
+    ],
+    [
+     0.43,
+     "left_up"
+    ],
+    [
+     0.5,
+     "left"
+    ],
+    [
+     0.62,
+     "left"
+    ],
+    [
+     0.72,
+     "left"
+    ]
+   ],
+   "shape": "c",
+   "thumb": "steady"
+  }
+ },
+ "Cold": {
+  "R": {
+   "palm": "forward_left",
+   "shape": "fist",
+   "thumb_dir": "left_up",
+   "thumb": "steady",
+   "upper_dir": [
+    -0.18,
+    -0.93,
+    0.2
+   ],
+   "fore_dir": [
+    0.2,
+    0.72,
+    0.66
+   ],
+   "arm_hold_sec": [
+    2.45,
+    4.1
+   ],
+   "arm_fade": 0.35,
+   "shake": {
+    "hz": 4,
+    "amp": 0.1
+   }
+  },
+  "L": {
+   "palm": "forward_right",
+   "shape": "fist",
+   "thumb_dir": "right_up",
+   "thumb": "steady",
+   "upper_dir": [
+    0.18,
+    -0.93,
+    0.2
+   ],
+   "fore_dir": [
+    -0.2,
+    0.72,
+    0.66
+   ],
+   "arm_hold_sec": [
+    2.45,
+    4.1
+   ],
+   "arm_fade": 0.35,
+   "shake": {
+    "hz": 4,
+    "amp": 0.1
+   }
+  }
+ },
+ "Doctor": {
+  "R": {
+   "key_unit": "sec",
+   "arm_hold_sec": [
+    1.5,
+    7
+   ],
+   "arm_fade": 0.3,
+   "palm": [
+    [
+     1.2,
+     "back"
+    ],
+    [
+     1.6,
+     "back_down"
+    ],
+    [
+     2,
+     "back"
+    ],
+    [
+     4.2,
+     "back"
+    ],
+    [
+     4.35,
+     "back_up"
+    ],
+    [
+     4.55,
+     "forward_left"
+    ],
+    [
+     5.3,
+     "forward_left"
+    ],
+    [
+     5.65,
+     "forward_up"
+    ],
+    [
+     6,
+     "up_forward"
+    ],
+    [
+     6.8,
+     "up"
+    ]
+   ],
+   "shape": [
+    [
+     1.2,
+     "relaxed"
+    ],
+    [
+     1.6,
+     "flat_soft"
+    ],
+    [
+     1.9,
+     "point_soft"
+    ],
+    [
+     2.15,
+     "point"
+    ],
+    [
+     4.2,
+     "point"
+    ],
+    [
+     4.32,
+     "claw"
+    ],
+    [
+     4.5,
+     "claw"
+    ],
+    [
+     5.3,
+     "claw"
+    ],
+    [
+     5.65,
+     "open_soft"
+    ],
+    [
+     6,
+     "relaxed"
+    ],
+    [
+     6.9,
+     "relaxed"
+    ]
+   ],
+   "thumb_dir": [
+    [
+     1.2,
+     "left_up"
+    ],
+    [
+     1.6,
+     "left_up"
+    ],
+    [
+     2,
+     "left_back"
+    ],
+    [
+     4.2,
+     "left_back"
+    ],
+    [
+     4.5,
+     "up_left"
+    ],
+    [
+     5.3,
+     "up_left"
+    ],
+    [
+     5.7,
+     "up"
+    ],
+    [
+     6.9,
+     "up"
+    ]
+   ]
+  },
+  "L": {
+   "palm": "right",
+   "shape": "relaxed",
+   "thumb": "steady"
+  }
+ }
+}

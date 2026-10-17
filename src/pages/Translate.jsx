@@ -3,6 +3,7 @@ import './Translate.css'
 import { useHandLandmarks } from '../useHandLandmarks'
 import { useSignPrediction } from '../useSignPrediction'
 import { wordPhrases } from '../wordPhrases'
+import TextToSignView from '../features/textToSign/components/TextToSignView'
 
 function Translate() {
   const [mode, setMode] = useState(null)
@@ -15,34 +16,51 @@ function Translate() {
   const { predictedWord, confidence, isModelReady, confirmedWord } =
     useSignPrediction(getFeatureBuffer, isBufferFull, mode === 'signToText')
 
+  // Camera: fixed so React's double-run in dev can't leave a second
+  // stream running, and the camera asks for 30 fps.
   useEffect(() => {
-    if (mode === 'signToText') {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-        })
-        .then((stream) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream
-          }
-        })
-        .catch(() => {
-          setCameraError('Camera access was denied or is unavailable.')
-        })
-    }
+    if (mode !== 'signToText') return
+
+    let cancelled = false
+    let stream = null
+
+    setCameraError(null)
+
+    navigator.mediaDevices
+      .getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 },
+        },
+        audio: false,
+      })
+      .then((s) => {
+        if (cancelled) {
+          s.getTracks().forEach((track) => track.stop())
+          return
+        }
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = s
+        }
+      })
+      .catch(() => {
+        setCameraError('Camera access was denied or is unavailable.')
+      })
 
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop())
-      }
+      cancelled = true
+      if (stream) stream.getTracks().forEach((track) => track.stop())
+      if (videoRef.current) videoRef.current.srcObject = null
     }
   }, [mode])
 
   useEffect(() => {
-  if (mode !== 'signToText' || !confirmedWord) return
-  const phrase = wordPhrases[confirmedWord.word] || confirmedWord.word
-  setSentenceText((prev) => (prev ? `${prev}. ${phrase}` : phrase))
-}, [confirmedWord, mode])
+    if (mode !== 'signToText' || !confirmedWord) return
+    const phrase = wordPhrases[confirmedWord.word] || confirmedWord.word
+    setSentenceText((prev) => (prev ? `${prev}. ${phrase}` : phrase))
+  }, [confirmedWord, mode])
 
   return (
     <section className="translateSection">
@@ -74,14 +92,7 @@ function Translate() {
 
       {mode === 'textToSign' && (
         <div className="modeInterface">
-          <h2>Text to Sign</h2>
-          <p className="modeNote">
-            Interface placeholder. Text input and Joe's avatar output will
-            connect here.
-          </p>
-          <button className="backButton" onClick={() => setMode(null)}>
-            Back
-          </button>
+          <TextToSignView onBack={() => setMode(null)} />
         </div>
       )}
 
@@ -111,24 +122,24 @@ function Translate() {
                 )}
               </div>
 
-                              <div className="sentenceDisplay">
-                  <textarea
-                    className="sentenceTextarea"
-                    value={sentenceText}
-                    onChange={(e) => setSentenceText(e.target.value)}
-                    placeholder="Your sentence will build here as you sign. Click here to edit anytime."
-                    rows={3}
-                  />
+              <div className="sentenceDisplay">
+                <textarea
+                  className="sentenceTextarea"
+                  value={sentenceText}
+                  onChange={(e) => setSentenceText(e.target.value)}
+                  placeholder="Your sentence will build here as you sign. Click here to edit anytime."
+                  rows={3}
+                />
 
-                  {sentenceText.length > 0 && (
-                    <button
-                      className="clearButton"
-                      onClick={() => setSentenceText('')}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
+                {sentenceText.length > 0 && (
+                  <button
+                    className="clearButton"
+                    onClick={() => setSentenceText('')}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
 
               {isReady && (
                 <div className="landmarkDebug">

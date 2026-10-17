@@ -1,0 +1,412 @@
+{
+  "version": "1.0.0",
+  "language": "PSL",
+  "words": [
+    {
+      "id": "Angry",
+      "label": "Angry",
+      "urdu": "غصہ",
+      "clip": "Angry",
+      "durationSec": 1.6,
+      "aliases": ["mad", "furious", "annoyed", "gussa", "naraz"]
+    },
+    {
+      "id": "Bad",
+      "label": "Bad",
+      "urdu": "برا",
+      "clip": "Bad",
+      "durationSec": 1.4,
+      "aliases": ["bura", "kharab", "awful", "terrible", "poor"]
+    },
+    {
+      "id": "Brother",
+      "label": "Brother",
+      "urdu": "بھائی",
+      "clip": "Brother",
+      "durationSec": 1.6,
+      "aliases": ["bro", "bhai", "bhaiya", "sibling"]
+    },
+    {
+      "id": "Call",
+      "label": "Call",
+      "urdu": "کال کریں",
+      "clip": "Call",
+      "durationSec": 1.5,
+      "aliases": ["phone", "dial", "ring", "bulana", "contact"]
+    },
+    {
+      "id": "Cold",
+      "label": "Cold",
+      "urdu": "ٹھنڈ",
+      "clip": "Cold",
+      "durationSec": 1.5,
+      "aliases": ["chilly", "freezing", "thand", "sardi", "winter"]
+    },
+    {
+      "id": "Come",
+      "label": "Come",
+      "urdu": "آئیں",
+      "clip": "Come",
+      "durationSec": 1.4,
+      "aliases": ["arrive", "aao", "aana", "aaiye", "approach"]
+    },
+    {
+      "id": "Doctor",
+      "label": "Doctor",
+      "urdu": "ڈاکٹر",
+      "clip": "Doctor",
+      "durationSec": 1.7,
+      "aliases": ["physician", "medic", "dr", "hakeem"]
+    },
+    {
+      "id": "Drink",
+      "label": "Drink",
+      "urdu": "پینا",
+      "clip": "Drink",
+      "durationSec": 1.5,
+      "aliases": ["sip", "peena", "peeo", "beverage"]
+    },
+    {
+      "id": "Eat",
+      "label": "Eat",
+      "urdu": "کھانا",
+      "clip": "Eat",
+      "durationSec": 1.5,
+      "aliases": ["khana", "khao", "food", "dine", "meal"]
+    },
+    {
+      "id": "Father",
+      "label": "Father",
+      "urdu": "والد",
+      "clip": "Father",
+      "durationSec": 1.6,
+      "aliases": ["dad", "papa", "abbu", "abu", "walid", "daddy"]
+    },
+    {
+      "id": "Finish",
+      "label": "Finish",
+      "urdu": "ختم",
+      "clip": "Finish",
+      "durationSec": 1.5,
+      "aliases": ["khatam", "done", "complete", "completed", "end", "finished"]
+    },
+    {
+      "id": "Friend",
+      "label": "Friend",
+      "urdu": "دوست",
+      "clip": "Friend",
+      "durationSec": 1.5,
+      "aliases": ["dost", "buddy", "pal", "mate", "companion"]
+    },
+    {
+      "id": "Go",
+      "label": "Go",
+      "urdu": "جانا",
+      "clip": "Go",
+      "durationSec": 1.4,
+      "aliases": ["jana", "jao", "leave", "depart", "going"]
+    },
+    {
+      "id": "Good",
+      "label": "Good",
+      "urdu": "اچھا",
+      "clip": "Good",
+      "durationSec": 1.4,
+      "aliases": ["achha", "acha", "great", "fine", "nice", "well", "super"]
+    },
+    {
+      "id": "Happy",
+      "label": "Happy",
+      "urdu": "خوش",
+      "clip": "Happy",
+      "durationSec": 1.6,
+      "aliases": ["khush", "glad", "cheerful", "joyful", "delighted"]
+    },
+    {
+      "id": "Hello",
+      "label": "Hello",
+      "urdu": "ہیلو",
+      "clip": "Hello",
+      "durationSec": 1.5,
+      "aliases": ["hi", "hey", "salam", "assalam o alaikum", "assalam-o-alaikum", "assalamu alaikum", "aaoa", "greetings"]
+    },
+    {
+      "id": "Help",
+      "label": "Help",
+      "urdu": "مدد",
+      "clip": "Help",
+      "durationSec": 1.5,
+      "aliases": ["madad", "assist", "assistance", "support", "bachao"]
+    },
+    {
+      "id": "Home",
+      "label": "Home",
+      "urdu": "گھر",
+      "clip": "Home",
+      "durationSec": 1.5,
+      "aliases": ["ghar", "house", "residence", "homeward"]
+    },
+    {
+      "id": "Hospital",
+      "label": "Hospital",
+      "urdu": "ہسپتال",
+      "clip": "Hospital",
+      "durationSec": 1.7,
+      "aliases": ["haspatal", "clinic", "emergency", "ward"]
+    },
+    {
+      "id": "Hot",
+      "label": "Hot",
+      "urdu": "گرم",
+      "clip": "Hot",
+      "durationSec": 1.4,
+      "aliases": ["garm", "garmi", "warm", "boiling", "heat"]
+    },
+    {
+      "id": "How",
+      "label": "How",
+      "urdu": "کیسے",
+      "clip": "How",
+      "durationSec": 1.3,
+      "aliases": ["kese", "kaise"]
+    },
+    {
+      "id": "Hungry",
+      "label": "Hungry",
+      "urdu": "بھوکا",
+      "clip": "Hungry",
+      "durationSec": 1.6,
+      "aliases": ["bhook", "bhooka", "starving", "famished"]
+    },
+    {
+      "id": "Me",
+      "label": "Me",
+      "urdu": "میں",
+      "clip": "Me",
+      "durationSec": 1.3,
+      "aliases": ["i", "myself", "mein", "mujhe", "mera", "meri"]
+    },
+    {
+      "id": "Medicine",
+      "label": "Medicine",
+      "urdu": "دوائی",
+      "clip": "Medicine",
+      "durationSec": 1.6,
+      "aliases": ["dawa", "dawaii", "medicines", "pills", "meds", "tablet", "drugs"]
+    },
+    {
+      "id": "More",
+      "label": "More",
+      "urdu": "مزید",
+      "clip": "More",
+      "durationSec": 1.4,
+      "aliases": ["zyada", "mazeed", "extra", "additional"]
+    },
+    {
+      "id": "Mother",
+      "label": "Mother",
+      "urdu": "والدہ",
+      "clip": "Mother",
+      "durationSec": 1.6,
+      "aliases": ["mom", "mama", "ammi", "ami", "walida", "mommy"]
+    },
+    {
+      "id": "No",
+      "label": "No",
+      "urdu": "نہیں",
+      "clip": "No",
+      "durationSec": 1.3,
+      "aliases": ["nahi", "nahin", "nope", "nay", "never"]
+    },
+    {
+      "id": "Pain",
+      "label": "Pain",
+      "urdu": "درد",
+      "clip": "Pain",
+      "durationSec": 1.6,
+      "aliases": ["dard", "hurt", "hurting", "ache", "aching", "sore"]
+    },
+    {
+      "id": "Please",
+      "label": "Please",
+      "urdu": "برائے مہربانی",
+      "clip": "Please",
+      "durationSec": 1.5,
+      "aliases": ["plz", "meherbani", "baraye meherbani", "kindly"]
+    },
+    {
+      "id": "Sad",
+      "label": "Sad",
+      "urdu": "اداس",
+      "clip": "Sad",
+      "durationSec": 1.6,
+      "aliases": ["udas", "unhappy", "sorrowful", "depressed", "gloomy"]
+    },
+    {
+      "id": "Scared",
+      "label": "Scared",
+      "urdu": "خوفزدہ",
+      "clip": "Scared",
+      "durationSec": 1.6,
+      "aliases": ["khofzada", "dara", "afraid", "frightened", "fearful", "terrified"]
+    },
+    {
+      "id": "Sister",
+      "label": "Sister",
+      "urdu": "بہن",
+      "clip": "Sister",
+      "durationSec": 1.6,
+      "aliases": ["behan", "baji", "aapi", "sis"]
+    },
+    {
+      "id": "Sit",
+      "label": "Sit",
+      "urdu": "بیٹھیں",
+      "clip": "Sit",
+      "durationSec": 1.4,
+      "aliases": ["baithna", "baitho", "seated"]
+    },
+    {
+      "id": "Sorry",
+      "label": "Sorry",
+      "urdu": "معذرت",
+      "clip": "Sorry",
+      "durationSec": 1.6,
+      "aliases": ["maaf", "mafi", "apologies", "apologize", "excuse me"]
+    },
+    {
+      "id": "Stand",
+      "label": "Stand",
+      "urdu": "کھڑے ہوں",
+      "clip": "Stand",
+      "durationSec": 1.4,
+      "aliases": ["khara", "khare", "upright"]
+    },
+    {
+      "id": "Stop",
+      "label": "Stop",
+      "urdu": "رکیں",
+      "clip": "Stop",
+      "durationSec": 1.4,
+      "aliases": ["rukna", "ruko", "halt", "cease"]
+    },
+    {
+      "id": "ThankYou",
+      "label": "Thank You",
+      "urdu": "شکریہ",
+      "clip": "ThankYou",
+      "durationSec": 1.6,
+      "aliases": ["thank you", "thanks", "thx", "shukriya", "grateful"]
+    },
+    {
+      "id": "Tired",
+      "label": "Tired",
+      "urdu": "تھکا ہوا",
+      "clip": "Tired",
+      "durationSec": 1.6,
+      "aliases": ["thaka", "exhausted", "sleepy", "weary", "fatigued"]
+    },
+    {
+      "id": "Toilet",
+      "label": "Toilet",
+      "urdu": "واش روم",
+      "clip": "Toilet",
+      "durationSec": 1.5,
+      "aliases": ["washroom", "bathroom", "restroom", "lavatory", "loo"]
+    },
+    {
+      "id": "Wait",
+      "label": "Wait",
+      "urdu": "انتظار کریں",
+      "clip": "Wait",
+      "durationSec": 1.5,
+      "aliases": ["intezar", "sabar", "hold on", "pause"]
+    },
+    {
+      "id": "Water",
+      "label": "Water",
+      "urdu": "پانی",
+      "clip": "Water",
+      "durationSec": 1.5,
+      "aliases": ["pani", "aqua", "h2o"]
+    },
+    {
+      "id": "What",
+      "label": "What",
+      "urdu": "کیا",
+      "clip": "What",
+      "durationSec": 1.3,
+      "aliases": ["kya"]
+    },
+    {
+      "id": "Where",
+      "label": "Where",
+      "urdu": "کہاں",
+      "clip": "Where",
+      "durationSec": 1.3,
+      "aliases": ["kahan", "kidhar"]
+    },
+    {
+      "id": "Yes",
+      "label": "Yes",
+      "urdu": "ہاں",
+      "clip": "Yes",
+      "durationSec": 1.3,
+      "aliases": ["haan", "jee", "ji", "yeah", "yep", "sure", "ok", "okay"]
+    },
+    {
+      "id": "You",
+      "label": "You",
+      "urdu": "آپ",
+      "clip": "You",
+      "durationSec": 1.3,
+      "aliases": ["tum", "aap", "u", "yourself"]
+    }
+  ],
+  "phraseRules": [
+    { "phrase": "i need to go to the hospital", "words": ["Hospital"] },
+    { "phrase": "i need the toilet", "words": ["Toilet"] },
+    { "phrase": "i need a doctor", "words": ["Doctor"] },
+    { "phrase": "i want to go home", "words": ["Home"] },
+    { "phrase": "i want to drink", "words": ["Drink"] },
+    { "phrase": "i want to eat", "words": ["Eat"] },
+    { "phrase": "i want water", "words": ["Water"] },
+    { "phrase": "i want more", "words": ["More"] },
+    { "phrase": "i want to go", "words": ["Go"] },
+    { "phrase": "i am finished", "words": ["Finish"] },
+    { "phrase": "i am hungry", "words": ["Hungry"] },
+    { "phrase": "i feel cold", "words": ["Cold"] },
+    { "phrase": "i feel hot", "words": ["Hot"] },
+    { "phrase": "i am in pain", "words": ["Pain"] },
+    { "phrase": "i am scared", "words": ["Scared"] },
+    { "phrase": "i am tired", "words": ["Tired"] },
+    { "phrase": "i am angry", "words": ["Angry"] },
+    { "phrase": "i am happy", "words": ["Happy"] },
+    { "phrase": "i am sorry", "words": ["Sorry"] },
+    { "phrase": "i am sad", "words": ["Sad"] },
+    { "phrase": "i need medicine", "words": ["Medicine"] },
+    { "phrase": "i need help", "words": ["Help"] },
+    { "phrase": "that is good", "words": ["Good"] },
+    { "phrase": "that is bad", "words": ["Bad"] },
+    { "phrase": "how are you", "words": ["How", "You"] },
+    { "phrase": "how are u", "words": ["How", "You"] },
+    { "phrase": "how you", "words": ["How", "You"] },
+    { "phrase": "kaise ho", "words": ["How", "You"] },
+    { "phrase": "kese ho", "words": ["How", "You"] },
+    { "phrase": "thank you", "words": ["ThankYou"] },
+    { "phrase": "thank u", "words": ["ThankYou"] },
+    { "phrase": "thanks a lot", "words": ["ThankYou"] },
+    { "phrase": "my brother", "words": ["Brother"] },
+    { "phrase": "my father", "words": ["Father"] },
+    { "phrase": "my mother", "words": ["Mother"] },
+    { "phrase": "my sister", "words": ["Sister"] },
+    { "phrase": "my friend", "words": ["Friend"] }
+  ],
+  "fillerWords": [
+    "the", "a", "an", "is", "am", "are", "was", "were", "be", "been", "being",
+    "in", "on", "at", "to", "for", "of", "with", "by", "that", "this", "it",
+    "and", "or", "so", "as", "do", "does", "did",
+    "need", "needs", "want", "wants", "feel", "feels",
+    "aur", "ka", "ki", "ke", "ko", "se", "hai", "hain", "tha", "the", "thi", "chahiye"
+  ]
+}

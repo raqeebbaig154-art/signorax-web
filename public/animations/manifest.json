@@ -1,0 +1,154 @@
+{
+ "words": {
+  "Angry": {
+   "clip": "Sign_angry",
+   "file": "Sign_angry.json",
+   "duration": 4.133
+  },
+  "Bad": {
+   "clip": "Sign_bad",
+   "file": "Sign_bad.json",
+   "duration": 2.933
+  },
+  "Call": {
+   "clip": "Sign_call",
+   "file": "Sign_call.json",
+   "duration": 5.367
+  },
+  "Cold": {
+   "clip": "Sign_cold",
+   "file": "Sign_cold.json",
+   "duration": 3.633
+  },
+  "Come": {
+   "clip": "Sign_come",
+   "file": "Sign_come.json",
+   "duration": 5.433
+  },
+  "Doctor": {
+   "clip": "Sign_doctor",
+   "file": "Sign_doctor.json",
+   "duration": 6.233
+  },
+  "Drink": {
+   "clip": "Sign_drink",
+   "file": "Sign_drink.json",
+   "duration": 4.1
+  },
+  "Eat": {
+   "clip": "Sign_eat",
+   "file": "Sign_eat.json",
+   "duration": 4.2
+  },
+  "Father": {
+   "clip": "Sign_father",
+   "file": "Sign_father.json",
+   "duration": 8.567
+  },
+  "Go": {
+   "clip": "Sign_go",
+   "file": "Sign_go.json",
+   "duration": 6.0
+  },
+  "Good": {
+   "clip": "Sign_good",
+   "file": "Sign_good.json",
+   "duration": 3.167
+  },
+  "Happy": {
+   "clip": "Sign_happy",
+   "file": "Sign_happy.json",
+   "duration": 3.6
+  },
+  "Hello": {
+   "clip": "Sign_hello",
+   "file": "Sign_hello.json",
+   "duration": 5.567
+  },
+  "Help": {
+   "clip": "Sign_help",
+   "file": "Sign_help.json",
+   "duration": 4.5
+  },
+  "Home": {
+   "clip": "Sign_home",
+   "file": "Sign_home.json",
+   "duration": 5.0
+  },
+  "Me": {
+   "clip": "Sign_me",
+   "file": "Sign_me.json",
+   "duration": 3.133
+  },
+  "Medicine": {
+   "clip": "Sign_medicine",
+   "file": "Sign_medicine.json",
+   "duration": 4.533
+  },
+  "More": {
+   "clip": "Sign_more",
+   "file": "Sign_more.json",
+   "duration": 3.367
+  },
+  "No": {
+   "clip": "Sign_no",
+   "file": "Sign_no.json",
+   "duration": 4.2
+  },
+  "Please": {
+   "clip": "Sign_please",
+   "file": "Sign_please.json",
+   "duration": 4.9
+  },
+  "Sad": {
+   "clip": "Sign_sad",
+   "file": "Sign_sad.json",
+   "duration": 3.7
+  },
+  "Sit": {
+   "clip": "Sign_sit",
+   "file": "Sign_sit.json",
+   "duration": 3.867
+  },
+  "Sorry": {
+   "clip": "Sign_sorry",
+   "file": "Sign_sorry.json",
+   "duration": 4.867
+  },
+  "Stand": {
+   "clip": "Sign_stand",
+   "file": "Sign_stand.json",
+   "duration": 3.567
+  },
+  "ThankYou": {
+   "clip": "Sign_thankyou",
+   "file": "Sign_thankyou.json",
+   "duration": 5.267
+  },
+  "Tired": {
+   "clip": "Sign_tired",
+   "file": "Sign_tired.json",
+   "duration": 3.233
+  },
+  "Water": {
+   "clip": "Sign_water",
+   "file": "Sign_water.json",
+   "duration": 5.233
+  },
+  "What": {
+   "clip": "Sign_what",
+   "file": "Sign_what.json",
+   "duration": 3.2
+  },
+  "Yes": {
+   "clip": "Sign_yes",
+   "file": "Sign_yes.json",
+   "duration": 3.567
+  },
+  "You": {
+   "clip": "Sign_you",
+   "file": "Sign_you.json",
+   "duration": 3.167
+  }
+ }
+}

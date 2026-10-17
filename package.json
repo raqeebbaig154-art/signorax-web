@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node src/features/textToSign/engine/run-tests.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,7 +18,8 @@
     "@tensorflow/tfjs": "^4.22.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.3"
+    "react-router-dom": "^7.18.3",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

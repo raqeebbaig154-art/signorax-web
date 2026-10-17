@@ -1,0 +1,1035 @@
+#!/usr/bin/env python3
+"""
+psl_to_joe.py  -  turn PSL dictionary videos into animation clips for the Joe avatar.
+
+Pipeline:  video -> MediaPipe (body + hands) -> retarget onto Joe's Rigify bones -> one JSON clip per word.
+
+Examples (run from the signorax-web folder):
+  python psl_to_joe.py "C:\\path\\to\\Sit.mp4" --word Sit --preview
+  python psl_to_joe.py "C:\\path\\to\\videos_folder" --preview
+
+Needs:  pip install mediapipe opencv-python numpy matplotlib   (mediapipe 1.x, Tasks API)
+The two small MediaPipe model files are downloaded automatically into  ./psl_models  on the first run.
+"""
+import argparse
+import glob
+import json
+import os
+import struct
+import sys
+import urllib.request
+
+import cv2
+import numpy as np
+
+WORDS = ["Angry", "Bad", "Brother", "Call", "Cold", "Come", "Doctor", "Drink", "Eat", "Father", "Finish",
+         "Friend", "Go", "Good", "Happy", "Hello", "Help", "Home", "Hospital", "Hot", "How", "Hungry", "Me",
+         "Medicine", "More", "Mother", "No", "Pain", "Please", "Sad", "Scared", "Sister", "Sit", "Sorry",
+         "Stand", "Stop", "ThankYou", "Tired", "Toilet", "Wait", "Water", "What", "Where", "Yes", "You"]
+WORD_LOOKUP = {w.lower(): w for w in WORDS}
+
+POSE_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
+HAND_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task"
+
+# MediaPipe hand landmark ids for each finger (thumb: CMC,MCP,IP,TIP ; others: MCP,PIP,DIP,TIP)
+FINGERS = [("thumb", [1, 2, 3, 4]), ("f_index", [5, 6, 7, 8]), ("f_middle", [9, 10, 11, 12]),
+           ("f_ring", [13, 14, 15, 16]), ("f_pinky", [17, 18, 19, 20])]
+ARM_IDS = {"L": (11, 13, 15), "R": (12, 14, 16)}      # shoulder, elbow, wrist in MediaPipe pose
+
+# how far a finger bends at full closure (degrees): knuckle, middle joint, fingertip joint
+CURL_DEG = (78.0, 98.0, 62.0)
+
+# hand shapes: how closed each finger is (index, middle, ring, pinky), 0 = straight, 1 = closed. The thumb always follows the video.
+SHAPES = {"flat": [0, 0, 0, 0], "fist": [1, 1, 1, 1], "thumbup_fist": [1, 1, 1, 1], "point": [0, 1, 1, 1],
+          "v": [0, 0, 1, 1], "c": [0.45, 0.45, 0.45, 0.45], "relaxed": [0.3, 0.3, 0.3, 0.3], "claw": [0.6, 0.6, 0.6, 0.6]}
+# palm directions in Joe's space (x = his left, y = up, z = forward / away from his body)
+PALM_AXES = {"up": (0, 1, 0), "down": (0, -1, 0), "left": (1, 0, 0), "right": (-1, 0, 0), "forward": (0, 0, 1), "back": (0, 0, -1)}
+
+# the forward push that keeps hands out of Joe's torso is limited, and not used for hands hanging below this height
+MAX_PUSH_STEPS = 5
+HANG_HEIGHT = -9.0
+
+# how far each finger swings sideways at spread = 1 (degrees)
+SPLAY_DEG = {"f_index": 14.0, "f_middle": 5.0, "f_ring": -5.0, "f_pinky": -16.0}
+
+# camera axes (x right, y down, z away)  ->  Joe axes (x = his left, y up, z = forward)
+CAM_TO_JOE = np.diag([1.0, -1.0, -1.0])
+
+
+# ----------------------------------------------------------------------------- math helpers
+def unit(v):
+    n = np.linalg.norm(v)
+    return v / n if n > 1e-9 else np.zeros(3)
+
+
+def rot_from_to(a, b):
+    a, b = unit(a), unit(b)
+    c = float(np.dot(a, b))
+    if c > 1 - 1e-9:
+        return np.eye(3)
+    if c < -1 + 1e-9:
+        axis = unit(np.cross(a, [1, 0, 0])) if abs(a[0]) < 0.9 else unit(np.cross(a, [0, 1, 0]))
+        return 2 * np.outer(axis, axis) - np.eye(3)
+    v = np.cross(a, b)
+    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    return np.eye(3) + vx + vx @ vx * (1.0 / (1.0 + c))
+
+
+def palm_basis(wrist, index_mcp, middle_mcp, pinky_mcp):
+    y = unit(middle_mcp - wrist)
+    s = pinky_mcp - index_mcp
+    s = unit(s - np.dot(s, y) * y)
+    n = np.cross(s, y)
+    return np.column_stack([s, y, n])
+
+
+def smoothstep(a, b, x):
+    t = np.clip((x - a) / (b - a), 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def axis_angle_mat(axis, ang):
+    axis = unit(axis)
+    K = np.array([[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]], [-axis[1], axis[0], 0]])
+    return np.eye(3) + np.sin(ang) * K + (1 - np.cos(ang)) * (K @ K)
+
+
+def angle_between(a, b):
+    return float(np.degrees(np.arccos(np.clip(np.dot(unit(a), unit(b)), -1, 1))))
+
+
+def finger_curl(hand, ids):
+    """0 = straight finger, 1 = closed finger, from the tracked bend (knuckle + two joints)."""
+    seg = [hand[ids[k + 1]] - hand[ids[k]] for k in range(3)]
+    total = angle_between(hand[ids[0]] - hand[0], seg[0]) + angle_between(seg[0], seg[1]) + angle_between(seg[1], seg[2])
+    raw = float(np.clip((total - 35.0) / (175.0 - 35.0), 0.0, 1.0))
+    return float(smoothstep(0.12, 0.85, raw))        # make fingers clearly open or clearly closed
+
+
+def parse_palm(name):
+    v = np.zeros(3)
+    for part in str(name).lower().replace("-", "_").split("_"):
+        if part not in PALM_AXES:
+            sys.exit(f"Unknown palm direction '{name}'. Use up, down, left, right, forward, back (for example forward_down).")
+        v += np.array(PALM_AXES[part], float)
+    return unit(v)
+
+
+def spec_at(entry, frac):
+    """Palm direction and finger curls for one hand at a point (0..1) of the clip, from the sign spec."""
+    if not entry:
+        return {"palm": None, "curl": None}
+    out = {}
+    for key, conv in (("palm", parse_palm), ("thumb_dir", parse_palm), ("axis", parse_palm), ("spread", float), ("shape", lambda n: np.array(SHAPES[n], float) if n in SHAPES else sys.exit(
+            f"Unknown hand shape '{n}'. Use: " + ", ".join(SHAPES)))):
+        v = entry.get(key)
+        if v is None:
+            out[key] = None
+            continue
+        keys = [[0.0, v]] if isinstance(v, (str, int, float)) else v
+        keys = sorted(([float(a), conv(b)] for a, b in keys), key=lambda k: k[0])
+        if frac <= keys[0][0]:
+            res = keys[0][1]
+        elif frac >= keys[-1][0]:
+            res = keys[-1][1]
+        else:
+            res = keys[-1][1]
+            for (a0, v0), (a1, v1) in zip(keys, keys[1:]):
+                if a0 <= frac <= a1:
+                    t = (frac - a0) / max(a1 - a0, 1e-6)
+                    res = v0 * (1 - t) + v1 * t
+                    break
+        out[key] = unit(res) if key in ("palm", "thumb_dir", "axis") else res
+    return {"palm": out.get("palm"), "curl": out.get("shape"), "thumb_dir": out.get("thumb_dir"), "axis": out.get("axis"), "spread": out.get("spread")}
+
+
+def touch_at(spec, side, frac, points):
+    """If the sign spec says this hand should reach a body point (chin, mouth, nose, forehead, chest) now,
+    return (weight 0..1, wrist target position in Joe space)."""
+    best_w, best_t = 0.0, None
+    for item in (spec or {}).get("touch", []):
+        if item.get("hand") != side:
+            continue
+        ramp = float(item.get("ramp", 0.04))
+        w = smoothstep(item["from"] - ramp, item["from"], frac) * (1.0 - smoothstep(item["until"], item["until"] + ramp, frac))
+        if w <= 0:
+            continue
+        pt = item["point"]
+        base = np.array(pt, float) if isinstance(pt, list) else points[pt]
+        off = item.get("offset", [0, 0, 0])
+        if off and isinstance(off[0], list):
+            keys = sorted(([float(a), np.array(b, float)] for a, b in off), key=lambda k: k[0])
+            if frac <= keys[0][0]:
+                o = keys[0][1]
+            elif frac >= keys[-1][0]:
+                o = keys[-1][1]
+            else:
+                o = keys[-1][1]
+                for (a0, v0), (a1, v1) in zip(keys, keys[1:]):
+                    if a0 <= frac <= a1:
+                        o = v0 + (v1 - v0) * ((frac - a0) / max(a1 - a0, 1e-6))
+                        break
+        else:
+            o = np.array(off, float)
+        if w > best_w:
+            best_w, best_t = float(w), base + o
+    return best_w, best_t
+
+
+def quat_to_mat(q):
+    x, y, z, w = q
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def mat_to_quat(R):
+    t = np.trace(R)
+    if t > 0:
+        s = np.sqrt(t + 1.0) * 2
+        q = [(R[2, 1] - R[1, 2]) / s, (R[0, 2] - R[2, 0]) / s, (R[1, 0] - R[0, 1]) / s, 0.25 * s]
+    elif R[0, 0] > R[1, 1] and R[0, 0] > R[2, 2]:
+        s = np.sqrt(1.0 + R[0, 0] - R[1, 1] - R[2, 2]) * 2
+        q = [0.25 * s, (R[0, 1] + R[1, 0]) / s, (R[0, 2] + R[2, 0]) / s, (R[2, 1] - R[1, 2]) / s]
+    elif R[1, 1] > R[2, 2]:
+        s = np.sqrt(1.0 + R[1, 1] - R[0, 0] - R[2, 2]) * 2
+        q = [(R[0, 1] + R[1, 0]) / s, 0.25 * s, (R[1, 2] + R[2, 1]) / s, (R[0, 2] - R[2, 0]) / s]
+    else:
+        s = np.sqrt(1.0 + R[2, 2] - R[0, 0] - R[1, 1]) * 2
+        q = [(R[0, 2] + R[2, 0]) / s, (R[1, 2] + R[2, 1]) / s, 0.25 * s, (R[1, 0] - R[0, 1]) / s]
+    q = np.array(q, float)
+    return q / np.linalg.norm(q)
+
+
+def slerp(q0, q1, t):
+    q0 = np.asarray(q0, float)
+    q1 = np.asarray(q1, float)
+    d = float(np.dot(q0, q1))
+    if d < 0:
+        q1, d = -q1, -d
+    if d > 0.9995:
+        r = q0 + t * (q1 - q0)
+        return r / np.linalg.norm(r)
+    th = np.arccos(np.clip(d, -1, 1))
+    return (np.sin((1 - t) * th) * q0 + np.sin(t * th) * q1) / np.sin(th)
+
+
+def gsmooth(a, sigma):
+    """Gaussian smooth along axis 0 (time)."""
+    if sigma <= 0 or len(a) < 3:
+        return a
+    r = max(1, int(3 * sigma + 0.5))
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2)
+    k /= k.sum()
+    pad = np.concatenate([np.repeat(a[:1], r, 0), a, np.repeat(a[-1:], r, 0)], 0)
+    out = np.zeros_like(a, dtype=float)
+    for i, w in enumerate(k):
+        out += w * pad[i:i + len(a)]
+    return out
+
+
+def fill_nan(a):
+    """Fill NaN rows along time by linear interpolation (hold at the ends). Returns None if nothing valid."""
+    flat = a.reshape(len(a), -1).astype(float).copy()
+    ok = np.isfinite(flat).all(1)
+    if not ok.any():
+        return None
+    x = np.arange(len(flat))
+    for c in range(flat.shape[1]):
+        flat[:, c] = np.interp(x, x[ok], flat[ok, c])
+    return flat.reshape(a.shape)
+
+
+def resample(a, t_in, t_out):
+    flat = a.reshape(len(a), -1)
+    out = np.stack([np.interp(t_out, t_in, flat[:, c]) for c in range(flat.shape[1])], 1)
+    return out.reshape((len(t_out),) + a.shape[1:])
+
+
+# ----------------------------------------------------------------------------- Joe's skeleton
+def read_glb_json(path):
+    d = open(path, "rb").read()
+    clen, _ = struct.unpack("<I4s", d[12:20])
+    return json.loads(d[20:20 + clen])
+
+
+class Rig:
+    """Rest pose of Joe's skeleton, read straight from joe.glb."""
+
+    def __init__(self, path):
+        j = read_glb_json(path)
+        self.path = path
+        self.nodes = j["nodes"]
+        self.names = [n.get("name", "") for n in self.nodes]
+        self.idx = {n: i for i, n in enumerate(self.names)}
+        self.parent = {}
+        for i, n in enumerate(self.nodes):
+            for c in n.get("children", []):
+                self.parent[c] = i
+        self.local_q = {}
+        self.local_t = {}
+        for i, n in enumerate(self.nodes):
+            self.local_q[self.names[i]] = np.array(n.get("rotation", [0, 0, 0, 1]), float)
+            self.local_t[self.names[i]] = np.array(n.get("translation", [0, 0, 0]), float)
+        self.rest_R, self.rest_pos = {}, {}
+        for i, nm in enumerate(self.names):
+            self._world(i)
+
+    def _world(self, i):
+        nm = self.names[i]
+        if nm in self.rest_R:
+            return self.rest_R[nm], self.rest_pos[nm]
+        Rl = quat_to_mat(self.local_q[nm])
+        if i in self.parent:
+            pR, pP = self._world(self.parent[i])
+            R, P = pR @ Rl, pP + pR @ self.local_t[nm]
+        else:
+            R, P = Rl, self.local_t[nm].copy()
+        self.rest_R[nm], self.rest_pos[nm] = R, P
+        return R, P
+
+    def parent_name(self, nm):
+        return self.names[self.parent[self.idx[nm]]] if self.idx[nm] in self.parent else None
+
+    def rest_local_R(self, nm):
+        return quat_to_mat(self.local_q[nm])
+
+
+class TorsoMap:
+    """Front surface of Joe's torso (from his mesh), used to keep the hands in front of the body."""
+
+    def __init__(self, path, rig, cell=0.02):
+        d = open(path, "rb").read()
+        clen, _ = struct.unpack("<I4s", d[12:20])
+        j = json.loads(d[20:20 + clen])
+        off = 20 + clen
+        blen, _ = struct.unpack("<I4s", d[off:off + 8])
+        buf = d[off + 8:off + 8 + blen]
+
+        def acc(i):
+            a = j["accessors"][i]
+            bv = j["bufferViews"][a["bufferView"]]
+            comp = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[a["type"]]
+            dt = {5126: np.float32, 5123: np.uint16, 5125: np.uint32, 5121: np.uint8}[a["componentType"]]
+            st = bv.get("byteOffset", 0) + a.get("byteOffset", 0)
+            isz = comp * np.dtype(dt).itemsize
+            stride = bv.get("byteStride")
+            if stride and stride != isz:
+                raw = np.frombuffer(buf, dtype=np.uint8, count=a["count"] * stride, offset=st).reshape(a["count"], stride)[:, :isz].copy()
+                return raw.view(dt).reshape(a["count"], comp), a
+            return np.frombuffer(buf, dtype=dt, count=a["count"] * comp, offset=st).reshape(a["count"], comp), a
+
+        joints = j["skins"][0]["joints"]
+        jname = [rig.names[i] for i in joints]
+        torso_j = np.array([n.startswith(("DEF-spine", "DEF-pelvis", "DEF-thigh")) and not n.startswith(("DEF-spine.004", "DEF-spine.005", "DEF-spine.006"))
+                            for n in jname])
+        head_j = np.array([n == "DEF-spine.006" for n in jname])
+        head_pts = []
+        pts = []
+        for n in j["nodes"]:
+            if "mesh" not in n or "skin" not in n:
+                continue
+            for p in j["meshes"][n["mesh"]]["primitives"]:
+                at = p["attributes"]
+                if "JOINTS_0" not in at:
+                    continue
+                P, _ = acc(at["POSITION"])
+                J, _ = acc(at["JOINTS_0"])
+                W, wa = acc(at["WEIGHTS_0"])
+                W = W.astype(float)
+                if wa["componentType"] == 5121:
+                    W /= 255.0
+                elif wa["componentType"] == 5123:
+                    W /= 65535.0
+                tw = (W * torso_j[J.astype(int)]).sum(1)
+                pts.append(P[tw > 0.7])
+                if n.get("name", "").startswith("GEO-body"):
+                    head_pts.append(P[(W * head_j[J.astype(int)]).sum(1) > 0.6])
+        H = np.concatenate(head_pts) if head_pts else np.zeros((0, 3))
+        face = H[(H[:, 2] > 0.06) & (np.abs(H[:, 0]) < 0.04)] if len(H) else H
+        self.points = {}
+        if len(face):
+            low = face[np.argsort(face[:, 1])[:4]].mean(0)
+            nose = H[np.argmax(H[:, 2])]
+            self.points["chin"] = np.array([0.0, low[1], low[2]])
+            self.points["mouth"] = self.points["chin"] + np.array([0.0, 0.03, -0.004])
+            self.points["nose"] = np.array([0.0, nose[1], nose[2]])
+            self.points["forehead"] = np.array([0.0, nose[1] + 0.085, nose[2] - 0.04])
+        sh = (rig.rest_pos["DEF-upper_arm.L"] + rig.rest_pos["DEF-upper_arm.R"]) / 2
+        self.points["chest"] = sh + np.array([0.0, -0.14, 0.11])
+        P = np.concatenate(pts) if pts else np.zeros((0, 3))
+        self.cell = cell
+        self.x0, self.y0 = -0.45, 0.35
+        nx, ny = int(0.9 / cell) + 1, int(1.35 / cell) + 1
+        z = np.full((ny, nx), np.nan)
+        ix = np.clip(((P[:, 0] - self.x0) / cell).astype(int), 0, nx - 1)
+        iy = np.clip(((P[:, 1] - self.y0) / cell).astype(int), 0, ny - 1)
+        for a_, b_, c_ in zip(iy, ix, P[:, 2]):
+            if not (z[a_, b_] >= c_):
+                z[a_, b_] = c_
+        for r in range(ny):                      # fill small gaps inside each row of the torso
+            ok = np.where(np.isfinite(z[r]))[0]
+            if len(ok) > 1:
+                z[r, ok[0]:ok[-1] + 1] = np.interp(np.arange(ok[0], ok[-1] + 1), ok, z[r, ok])
+        self.z = z
+
+    def surface(self, x, y):
+        ix = int(round((x - self.x0) / self.cell))
+        iy = int(round((y - self.y0) / self.cell))
+        if 0 <= iy < self.z.shape[0] and 0 <= ix < self.z.shape[1] and np.isfinite(self.z[iy, ix]):
+            return self.z[iy, ix]
+        return -9.0
+
+
+def side_bones(s):
+    arm = [f"DEF-upper_arm.{s}", f"DEF-upper_arm.{s}.001", f"DEF-forearm.{s}", f"DEF-forearm.{s}.001", f"DEF-hand.{s}"]
+    fing = [f"DEF-{f}.0{k}.{s}" for f, _ in FINGERS for k in (1, 2, 3)]
+    return arm, fing
+
+
+def check_rig(rig):
+    missing = []
+    for s in ("L", "R"):
+        arm, fing = side_bones(s)
+        missing += [b for b in arm + fing if b not in rig.idx]
+    if missing:
+        sys.exit("The avatar file is missing these bones: " + ", ".join(missing[:8]) +
+                 "\nUse the joe.glb with the Rigify DEF- bones (Export Deformation Bones Only).")
+
+
+# ----------------------------------------------------------------------------- tracking (MediaPipe Tasks)
+def download(url, dest):
+    if os.path.exists(dest):
+        return dest
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    print("  downloading model:", os.path.basename(dest))
+    try:
+        urllib.request.urlretrieve(url, dest)
+    except Exception as e:
+        sys.exit(f"Could not download {url}\n({e})\nDownload it in your browser and save it as:\n  {dest}")
+    return dest
+
+
+def extract_landmarks(video, model_dir):
+    import cv2
+    import mediapipe as mp
+    from mediapipe.tasks.python import BaseOptions, vision
+
+    pose_path = download(POSE_URL, os.path.join(model_dir, "pose_landmarker_heavy.task"))
+    hand_path = download(HAND_URL, os.path.join(model_dir, "hand_landmarker.task"))
+    cap = cv2.VideoCapture(video)
+    if not cap.isOpened():
+        sys.exit(f"Cannot open video: {video}")
+    fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    po = vision.PoseLandmarkerOptions(base_options=BaseOptions(model_asset_path=pose_path),
+                                      running_mode=vision.RunningMode.VIDEO, num_poses=1)
+    ho = vision.HandLandmarkerOptions(base_options=BaseOptions(model_asset_path=hand_path),
+                                      running_mode=vision.RunningMode.VIDEO, num_hands=2)
+    PI, PW, HI, HW, HV = [], [], [], [], []
+    last_ts, i = -1, 0
+    with vision.PoseLandmarker.create_from_options(po) as pl, vision.HandLandmarker.create_from_options(ho) as hl:
+        while True:
+            ok, fr = cap.read()
+            if not ok:
+                break
+            rgb = np.ascontiguousarray(cv2.cvtColor(fr, cv2.COLOR_BGR2RGB))
+            img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            ts = max(last_ts + 1, int(1000.0 * i / fps))
+            last_ts = ts
+            i += 1
+            pr = pl.detect_for_video(img, ts)
+            hr = hl.detect_for_video(img, ts)
+            if pr.pose_landmarks and pr.pose_world_landmarks:
+                PI.append([[l.x, l.y, l.z, l.visibility or 0.0] for l in pr.pose_landmarks[0]])
+                PW.append([[l.x, l.y, l.z, l.visibility or 0.0] for l in pr.pose_world_landmarks[0]])
+            else:
+                PI.append(np.full((33, 4), np.nan))
+                PW.append(np.full((33, 4), np.nan))
+            hi = np.full((2, 21, 3), np.nan)
+            hw = np.full((2, 21, 3), np.nan)
+            hv = np.zeros(2, bool)
+            for k, (a, b) in enumerate(zip(hr.hand_landmarks, hr.hand_world_landmarks)):
+                if k > 1:
+                    break
+                hi[k] = [[l.x, l.y, l.z] for l in a]
+                hw[k] = [[l.x, l.y, l.z] for l in b]
+                hv[k] = True
+            HI.append(hi)
+            HW.append(hw)
+            HV.append(hv)
+    cap.release()
+    return dict(fps=fps, pose_img=np.array(PI, float), pose_world=np.array(PW, float),
+                hand_img=np.array(HI), hand_world=np.array(HW), hand_valid=np.array(HV))
+
+
+def load_landmarks(video, cache_dir, model_dir, npz=None):
+    if npz:
+        d = np.load(npz)
+        return {k: d[k] for k in d.files}
+    os.makedirs(cache_dir, exist_ok=True)
+    cache = os.path.join(cache_dir, os.path.splitext(os.path.basename(video))[0] + ".npz")
+    if os.path.exists(cache):
+        d = np.load(cache)
+        return {k: d[k] for k in d.files}
+    print("  tracking body and hands (this takes a minute)...")
+    data = extract_landmarks(video, model_dir)
+    np.savez_compressed(cache, **data)
+    return data
+
+
+# ----------------------------------------------------------------------------- landmark timelines
+def build_timelines(d, width, height):
+    """Joe-space body landmarks (in-image x,y from the picture; depth from MediaPipe) and per-side hand landmarks."""
+    T = len(d["pose_world"])
+    pimg = d["pose_img"][:, :, :2]
+    pw = d["pose_world"][:, :, :3]
+    # metres-per-pixel from the shoulder width (median over the clip)
+    sh_px = np.linalg.norm((pimg[:, 11] - pimg[:, 12]) * [width, height], axis=1)
+    sh_m = np.linalg.norm(pw[:, 11] - pw[:, 12], axis=1)
+    good = np.isfinite(sh_px) & np.isfinite(sh_m) & (sh_px > 5)
+    k = float(np.median(sh_m[good] / sh_px[good])) if good.any() else 0.0015
+    hip = np.nanmean(pimg[:, 23:25], axis=1, keepdims=True)
+    pose_av = np.stack([(pimg[:, :, 0] - hip[:, :, 0]) * width * k,
+                        -(pimg[:, :, 1] - hip[:, :, 1]) * height * k,
+                        -pw[:, :, 2]], axis=2)          # x,y from the picture, depth from the 3D estimate
+    L_w = np.full((T, 21, 3), np.nan)
+    R_w = np.full((T, 21, 3), np.nan)
+    lv = np.zeros(T, bool)
+    rv = np.zeros(T, bool)
+    for t in range(T):
+        slots = [k for k in range(2) if d["hand_valid"][t, k]]
+        if not slots or not np.isfinite(pimg[t, 15]).all():
+            continue
+        wl, wr = pimg[t, 15], pimg[t, 16]
+        dist = {k: (np.linalg.norm(d["hand_img"][t, k, 0, :2] - wl), np.linalg.norm(d["hand_img"][t, k, 0, :2] - wr))
+                for k in slots}
+        assign = {}
+        if len(slots) == 2:
+            a = dist[slots[0]][0] + dist[slots[1]][1]
+            b = dist[slots[0]][1] + dist[slots[1]][0]
+            assign = {slots[0]: "L", slots[1]: "R"} if a <= b else {slots[0]: "R", slots[1]: "L"}
+        else:
+            k = slots[0]
+            assign = {k: "L" if dist[k][0] <= dist[k][1] else "R"}
+        for k, side in assign.items():
+            if min(dist[k]) > 0.25:        # hand too far from any tracked wrist -> ignore
+                continue
+            pts = d["hand_world"][t, k] @ CAM_TO_JOE.T
+            if side == "L":
+                L_w[t], lv[t] = pts, True
+            else:
+                R_w[t], rv[t] = pts, True
+    return pose_av, L_w, R_w, lv, rv
+
+
+def find_segment(lv, rv, fps, pad=0.6, min_len=0.4, merge_gap=0.5):
+    active = lv | rv
+    runs, start = [], None
+    for i, a in enumerate(active):
+        if a and start is None:
+            start = i
+        if not a and start is not None:
+            runs.append([start, i - 1])
+            start = None
+    if start is not None:
+        runs.append([start, len(active) - 1])
+    merged = []
+    for r in runs:
+        if merged and (r[0] - merged[-1][1]) / fps <= merge_gap:
+            merged[-1][1] = r[1]
+        else:
+            merged.append(r)
+    merged = [r for r in merged if (r[1] - r[0]) / fps >= min_len]
+    if not merged:
+        return None
+    s, e = merged[0]
+    return max(0.0, s / fps - pad), min((len(active) - 1) / fps, e / fps + pad)
+
+
+def find_segment_by_height(pose_av, fps, thr, pad=0.5, min_len=0.4, merge_gap=0.5):
+    """First signing segment = the first time a wrist is raised above hip level (works even when the hands stay visible at rest)."""
+    wl, wr = pose_av[:, 15, 1], pose_av[:, 16, 1]
+    top = np.fmax(wl, wr)
+    active = np.nan_to_num(top, nan=-9.0) > thr
+    runs, start = [], None
+    for i, a in enumerate(active):
+        if a and start is None:
+            start = i
+        if not a and start is not None:
+            runs.append([start, i - 1])
+            start = None
+    if start is not None:
+        runs.append([start, len(active) - 1])
+    merged = []
+    for r in runs:
+        if merged and (r[0] - merged[-1][1]) / fps <= merge_gap:
+            merged[-1][1] = r[1]
+        else:
+            merged.append(r)
+    merged = [r for r in merged if (r[1] - r[0]) / fps >= min_len]
+    if not merged:
+        return None
+    s, e = merged[0]
+    return max(0.0, s / fps - pad), min((len(active) - 1) / fps, e / fps + pad)
+
+
+# ----------------------------------------------------------------------------- retargeting
+class Retargeter:
+    def __init__(self, rig, snap=True):
+        self.rig = rig
+        self.snap = snap
+        self.rest_dir = {}
+        for s in ("L", "R"):
+            arm, fing = side_bones(s)
+            up, up1, fo, fo1, hand = arm
+            P = rig.rest_pos
+            self.rest_dir[up] = unit(P[fo] - P[up])
+            self.rest_dir[fo] = unit(P[hand] - P[fo])
+            for f, _ in FINGERS:
+                b1, b2, b3 = [f"DEF-{f}.0{k}.{s}" for k in (1, 2, 3)]
+                self.rest_dir[b1] = unit(P[b2] - P[b1])
+                self.rest_dir[b2] = unit(P[b3] - P[b2])
+                self.rest_dir[b3] = self.rest_dir[b2]
+        self.curl_axis = {}
+        self.palm_sign = {}
+        self.rest_palm = {s: palm_basis(rig.rest_pos[f"DEF-hand.{s}"], rig.rest_pos[f"DEF-f_index.01.{s}"],
+                                        rig.rest_pos[f"DEF-f_middle.01.{s}"], rig.rest_pos[f"DEF-f_pinky.01.{s}"])
+                          for s in ("L", "R")}
+        for s in ("L", "R"):
+            B = self.rest_palm[s]
+            axis, normal = B[:, 0], B[:, 2]
+            b1, b2 = f"DEF-f_middle.01.{s}", f"DEF-f_middle.02.{s}"
+            side_of_curl = float(np.dot(self.rest_dir[b2] - self.rest_dir[b1], normal))
+            self.curl_axis[s] = axis
+            self.palm_sign[s] = 1.0 if side_of_curl >= 0 else -1.0
+
+    def finger_dir_rest(self, side, curl, k, splay_deg=0.0):
+        """Direction (in Joe's rest world axes) of finger segment k for a curl amount 0..1."""
+        B = self.rest_palm[side]
+        ang = np.radians(sum(CURL_DEG[:k + 1])) * curl * self.palm_sign[side]
+        d = axis_angle_mat(self.curl_axis[side], ang) @ B[:, 1]
+        if splay_deg:
+            d = axis_angle_mat(B[:, 2], np.radians(splay_deg)) @ d      # fan the fingers apart around the palm normal
+        return d
+
+    def _swing_child(self, bone, parent_new_R, d_target_world, new_R, local):
+        rig = self.rig
+        parent = rig.parent_name(bone)
+        d_rest_p = rig.rest_R[parent].T @ self.rest_dir[bone]
+        d_tgt_p = parent_new_R.T @ d_target_world
+        swing = rot_from_to(d_rest_p, d_tgt_p)
+        lr = swing @ rig.rest_local_R(bone)
+        local[bone] = lr
+        new_R[bone] = parent_new_R @ lr
+
+    def frame(self, side, pose, hand, fb=(0.0, 0.0), over=None, lift=0.0, reach=None):
+        """Local rotation matrices for one side at one frame. pose: (33,3) Joe space. hand: (21,3) or None."""
+        rig = self.rig
+        arm, fing = side_bones(side)
+        up, up1, fo, fo1, hnd = arm
+        s_id, e_id, w_id = ARM_IDS[side]
+        local, new_R = {}, {}
+        # upper arm (its parent is the rig root = identity)
+        d_up0 = unit(pose[e_id] - pose[s_id])
+        d_fo0 = unit(pose[w_id] - pose[e_id])
+        if reach is not None and reach[0] > 0 and reach[1] is not None:
+            # two bone IK: put Joe's wrist on the target (for example the chin), elbow direction taken from the video
+            w_ik, T = reach
+            S = rig.rest_pos[up]
+            Lu = np.linalg.norm(rig.rest_pos[fo] - S)
+            Lf = np.linalg.norm(rig.rest_pos[hnd] - rig.rest_pos[fo])
+            v = T - S
+            dist = float(np.clip(np.linalg.norm(v), abs(Lu - Lf) + 1e-3, Lu + Lf - 1e-3))
+            axis = unit(v)
+            a_ = (Lu ** 2 - Lf ** 2 + dist ** 2) / (2 * dist)
+            r_ = np.sqrt(max(Lu ** 2 - a_ ** 2, 0.0))
+            hint = d_up0 - np.dot(d_up0, axis) * axis
+            if np.linalg.norm(hint) < 1e-4:
+                hint = np.cross(axis, [0, 0, 1.0])
+            E = S + axis * a_ + unit(hint) * r_
+            d_up0 = unit((1 - w_ik) * d_up0 + w_ik * unit(E - S))
+            d_fo0 = unit((1 - w_ik) * d_fo0 + w_ik * unit(S + axis * dist - E))
+        d_up = unit(d_up0 + np.array([0, 0.5 * lift, fb[0]]))
+        d_fo = unit(d_fo0 + np.array([0, lift, fb[1]]))
+        parent = rig.parent_name(up)
+        pR = new_R.get(parent, rig.rest_R[parent]) if parent else np.eye(3)
+        self._swing_child(up, pR, d_up, new_R, local)
+        for b in (up1,):
+            local[b] = rig.rest_local_R(b)
+            new_R[b] = new_R[rig.parent_name(b)] @ local[b]
+        self._swing_child(fo, new_R[up1], d_fo, new_R, local)
+        local[fo1] = rig.rest_local_R(fo1)
+        new_R[fo1] = new_R[fo] @ local[fo1]
+        # hand: full orientation from the palm
+        over = over or {}
+        if hand is not None and np.isfinite(hand).all():
+            Bt = palm_basis(hand[0], hand[5], hand[9], hand[17])
+            if over.get("palm") is not None:
+                # the sign spec fixes which way the palm faces; the fingers still point along the forearm and the tracked hand
+                y_t = over["axis"] if over.get("axis") is not None else unit(0.6 * d_fo + 0.4 * unit(hand[9] - hand[0]))
+                n = over["palm"] - np.dot(over["palm"], y_t) * y_t
+                if np.linalg.norm(n) < 1e-3:
+                    n = Bt[:, 2] * self.palm_sign[side]
+                n_t = self.palm_sign[side] * unit(n)
+                Bt = np.column_stack([np.cross(y_t, n_t), y_t, n_t])
+            R_align = Bt @ self.rest_palm[side].T
+            hw = R_align @ rig.rest_R[hnd]
+        else:
+            hw = new_R[fo1] @ rig.rest_local_R(hnd)
+        local[hnd] = new_R[fo1].T @ hw
+        new_R[hnd] = hw
+        # fingers
+        for f, ids in FINGERS:
+            prev = hnd
+            ok_hand = hand is not None and np.isfinite(hand).all()
+            curl = finger_curl(hand, ids) if (ok_hand and f != "thumb" and self.snap) else None
+            if ok_hand and f != "thumb" and over.get("curl") is not None:
+                curl = float(over["curl"][[x[0] for x in FINGERS[1:]].index(f)])
+            for k in range(3):
+                b = f"DEF-{f}.0{k + 1}.{side}"
+                if ok_hand:
+                    if curl is not None:
+                        sp = (over.get("spread") or 0.0) * SPLAY_DEG.get(f, 0.0)
+                        d = new_R[hnd] @ (rig.rest_R[hnd].T @ self.finger_dir_rest(side, curl, k, sp))
+                    else:
+                        d = unit(hand[ids[k + 1]] - hand[ids[k]])
+                    if f == "thumb" and over.get("thumb_dir") is not None:
+                        d = over["thumb_dir"]
+                    self._swing_child(b, new_R[prev], d, new_R, local)
+                else:
+                    local[b] = rig.rest_local_R(b)
+                    new_R[b] = new_R[prev] @ local[b]
+                prev = b
+        return local, new_R
+
+    def hand_points(self, side, local):
+        """World positions of the wrist and every finger joint for one side, given local rotations."""
+        rig = self.rig
+        arm, fing = side_bones(side)
+        R, Pp = {}, {}
+        order = [b for b in arm if b in local or True] + fing
+        for b in order:
+            par = rig.parent_name(b)
+            Rl = local[b] if b in local else rig.rest_local_R(b)
+            if par is None or par not in R:
+                if par is None:
+                    R[b], Pp[b] = Rl, rig.local_t[b].copy()
+                else:
+                    R[b] = rig.rest_R[par] @ Rl
+                    Pp[b] = rig.rest_pos[par] + rig.rest_R[par] @ rig.local_t[b]
+            else:
+                R[b], Pp[b] = R[par] @ Rl, Pp[par] + R[par] @ rig.local_t[b]
+        pts = [Pp[arm[4]]] + [Pp[b] for b in fing]
+        tips = []
+        for f, _ in FINGERS:
+            b3, b2 = f"DEF-{f}.03.{side}", f"DEF-{f}.02.{side}"
+            tips.append(Pp[b3] + (Pp[b3] - Pp[b2]) * 0.8)
+        return np.array(pts + tips)
+
+    def clearance(self, torso, pts, margin=0.02):
+        worst = 9.0
+        for x, y, z in pts:
+            worst = min(worst, z - (torso.surface(x, y) + margin))
+        return worst
+
+
+def clamp_wrist(q, rest_q, max_deg):
+    """Limit how far the wrist can bend away from its rest pose."""
+    rel = np.array([0, 0, 0, 1.0])
+    inv = np.array([-rest_q[0], -rest_q[1], -rest_q[2], rest_q[3]])
+    x1, y1, z1, w1 = q
+    x2, y2, z2, w2 = inv
+    rel = np.array([w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2, w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
+                    w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2, w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2])
+    ang = np.degrees(2 * np.arccos(np.clip(abs(rel[3]), 0, 1)))
+    if ang <= max_deg:
+        return q
+    return slerp(rest_q, q, max_deg / ang)
+
+
+def build_clip(rig, rt, data, fps_out, width, height, start=None, end=None, active_height=0.08, spec=None):
+    fps_in = float(data["fps"])
+    pose_av, L_w, R_w, lv, rv = build_timelines(data, width, height)
+    if start is None or end is None:
+        seg = find_segment_by_height(pose_av, fps_in, active_height) or find_segment(lv, rv, fps_in)
+        if seg is None:
+            return None, "no hands were detected in this video"
+        start, end = (seg[0] if start is None else start), (seg[1] if end is None else end)
+    T = len(pose_av)
+    t_in = np.arange(T) / fps_in
+    end = min(end, t_in[-1])
+    start = max(0.0, start)
+    if end - start < 0.5:
+        return None, "the signing part is too short"
+    t_out = np.arange(start, end, 1.0 / fps_out)
+    F = len(t_out)
+
+    pose = fill_nan(pose_av)
+    if pose is None:
+        return None, "the body was not detected"
+    pose = gsmooth(resample(pose, t_in, t_out), 3.5 if (spec or {}).get("stable") else 1.6)
+
+    hands, weights = {}, {}
+    for s, W, v in (("L", L_w, lv), ("R", R_w, rv)):
+        filled = fill_nan(W)
+        if filled is None:
+            hands[s], weights[s] = None, np.zeros(F)
+            continue
+        hands[s] = gsmooth(resample(filled, t_in, t_out), 1.4)
+        weights[s] = np.clip(gsmooth(resample(v.astype(float), t_in, t_out), 2.0) * 1.15, 0, 1)
+
+    # fade to Joe's rest pose at both ends so words can be chained smoothly
+    ramp = max(2, int(0.35 * fps_out))
+    env = np.ones(F)
+    for i in range(min(ramp, F)):
+        e = 0.5 - 0.5 * np.cos(np.pi * (i + 1) / (ramp + 1))
+        env[i] = min(env[i], e)
+        env[F - 1 - i] = min(env[F - 1 - i], e)
+
+    # keep the hands in front of Joe's torso: find how much forward push each frame needs, smooth it, then apply
+    def rc_at(side, f):
+        w, t = touch_at(spec, side, f / max(F - 1, 1), rt.torso.points)
+        return (w, t) if w > 0 else None
+
+    def sp_at(side, f, thumb=True):
+        d = spec_at((spec or {}).get(side), f / max(F - 1, 1))
+        return d if thumb else dict(d, thumb_dir=None)
+
+    fbs = {}
+    for s in ("L", "R"):
+        fb = np.zeros((F, 2))
+        for f in range(F):
+            hd = hands[s][f] if hands[s] is not None else None
+            cur = (0.0, 0.0)
+            for step in range(MAX_PUSH_STEPS):
+                cur = (0.16 * step, 0.2 * step)
+                local, _ = rt.frame(s, pose[f], hd, cur, sp_at(s, f, False), 0.0, rc_at(s, f))
+                pts_ = rt.hand_points(s, local)
+                if pts_[0][1] < HANG_HEIGHT or rt.clearance(rt.torso, pts_) >= 0:
+                    break          # hand is hanging at the side (nothing to push) or already clear of the torso
+            fb[f] = cur
+        fbs[s] = gsmooth(fb, 8.0 if (spec or {}).get("stable") else 2.0) * 1.1
+        print(f"  arm push forward ({s}): max {fbs[s][:, 1].max():.2f} (0 = none, {0.2 * (MAX_PUSH_STEPS - 1):.1f} = limit)")
+
+    # "contact": make one hand rest right on top of the other (for example the fist on the palm in Help)
+    lifts = {"L": np.zeros(F), "R": np.zeros(F)}
+    ct = (spec or {}).get("contact")
+    if ct:
+        hs, on = ct["hand"], ct["onto"]
+        print(f"  contact: {hs} hand rests on {on} hand, gap {ct.get('gap', 0.004)}")
+        target = 0.027 + float(ct.get("gap", 0.004))
+
+        def local_for(side, f, lf=0.0):
+            hd = hands[side][f] if hands[side] is not None else None
+            return rt.frame(side, pose[f], hd, tuple(fbs[side][f]), sp_at(side, f, False), lf, rc_at(side, f))[0]
+
+        raw = np.zeros(F)
+        for f in range(F):
+            P_on = rt.hand_points(on, local_for(on, f))
+            base = rt.hand_points(hs, local_for(hs, f))
+            w = 1.0 - smoothstep(0.10, 0.22, abs(base[:, 0].mean() - P_on[:, 0].mean()))
+            if w <= 0:
+                continue
+            best, bestv = 0.0, 1e9
+            for lf in np.linspace(-0.5, 0.9, 29):
+                m = rt.hand_points(hs, local_for(hs, f, lf))[:, 1].min() - P_on[:, 1].max()
+                if abs(m - target) < bestv:
+                    bestv, best = abs(m - target), lf
+            raw[f] = best * w
+        lifts[hs] = gsmooth(raw, 2.0)
+
+    tracks = {}
+    for s in ("L", "R"):
+        arm, fing = side_bones(s)
+        hand_bone = arm[4]
+        for f in range(F):
+            hd = hands[s][f] if hands[s] is not None else None
+            local, _ = rt.frame(s, pose[f], hd, tuple(fbs[s][f]), sp_at(s, f), float(lifts[s][f]), rc_at(s, f))
+            for b in arm + fing:
+                if b in (arm[1], arm[3]):
+                    continue                    # twist bones stay at rest
+                q_rest = rig.local_q[b]
+                q = mat_to_quat(local[b])
+                if b == hand_bone:
+                    q = clamp_wrist(q, q_rest, float((spec or {}).get("wrist_limit", 80)))
+                w = env[f] if (b in arm or (spec or {}).get("stable")) else env[f] * weights[s][f]
+                tracks.setdefault(b, []).append(slerp(q_rest, q, float(w)))
+    out = {}
+    for b, qs in tracks.items():
+        arr = np.array(qs)
+        for i in range(1, len(arr)):               # keep quaternion signs continuous
+            if np.dot(arr[i], arr[i - 1]) < 0:
+                arr[i] = -arr[i]
+        side_spec = (spec or {}).get(b[-1]) or {}
+        sigma = 1.0 if "thumb" not in b else (10.0 if side_spec.get("thumb") == "steady" else 3.0)
+        if "f_" in b or "thumb" in b:
+            arr = gsmooth(arr, sigma)
+        arr = arr / np.linalg.norm(arr, axis=1, keepdims=True)
+        out[b] = [round(float(x), 4) for x in arr.reshape(-1)]
+    return dict(fps=fps_out, frames=F, duration=round(F / fps_out, 3), start=round(start, 2), end=round(end, 2),
+                bones=out), None
+
+
+# ----------------------------------------------------------------------------- preview (stick figure next to the video)
+def forward_kinematics(rig, frame_q):
+    """World joint positions for the arms and hands, given local quaternions for some bones."""
+    R, P = {}, {}
+
+    def walk(nm):
+        if nm in P:
+            return
+        par = rig.parent_name(nm)
+        q = frame_q.get(nm, rig.local_q[nm])
+        Rl = quat_to_mat(q)
+        if par is None:
+            R[nm], P[nm] = Rl, rig.local_t[nm].copy()
+        else:
+            walk(par)
+            R[nm], P[nm] = R[par] @ Rl, P[par] + R[par] @ rig.local_t[nm]
+
+    for nm in rig.names:
+        if nm.startswith("DEF-") and any(k in nm for k in ("upper_arm", "forearm", "hand", "f_", "thumb", "spine", "pelvis")):
+            walk(nm)
+    return P
+
+
+def make_preview(rig, clip, video, path):
+    import cv2
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    F, fps = clip["frames"], clip["fps"]
+    picks = np.linspace(0, F - 1, 6).astype(int)
+    cap = cv2.VideoCapture(video)
+    vfps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    last_frame = max(0, int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 2)
+    fig, axs = plt.subplots(2, 6, figsize=(18, 7))
+    for col, f in enumerate(picks):
+        t = clip["start"] + f / fps
+        cap.set(cv2.CAP_PROP_POS_FRAMES, min(int(t * vfps), last_frame))
+        ok, fr = cap.read()
+        axs[0, col].imshow(cv2.cvtColor(fr, cv2.COLOR_BGR2RGB) if ok else np.zeros((10, 10, 3)))
+        axs[0, col].set_title(f"video {t:.1f}s")
+        axs[0, col].axis("off")
+        q = {b: np.array(v[4 * f:4 * f + 4]) for b, v in clip["bones"].items()}
+        P = forward_kinematics(rig, q)
+        ax = axs[1, col]
+        ax.set_aspect("equal")
+        ax.set_xlim(-0.75, 0.75)
+        ax.set_ylim(0.6, 1.8)
+        ax.axis("off")
+        ax.set_title("Joe (front view)")
+        ax.plot([P["DEF-upper_arm.R"][0], P["DEF-upper_arm.L"][0]], [P["DEF-upper_arm.R"][1], P["DEF-upper_arm.L"][1]], "-", c="0.6")
+        ax.plot([0, 0], [P["DEF-upper_arm.L"][1], P["DEF-pelvis.L"][1] if "DEF-pelvis.L" in P else 0.95], "-", c="0.6")
+        for s, col_ in (("L", "tab:red"), ("R", "tab:blue")):
+            chain = [f"DEF-upper_arm.{s}", f"DEF-forearm.{s}", f"DEF-hand.{s}"]
+            ax.plot([P[c][0] for c in chain], [P[c][1] for c in chain], "-o", c=col_, lw=3, ms=4)
+            for fn, _ in FINGERS:
+                ch = [f"DEF-hand.{s}"] + [f"DEF-{fn}.0{k}.{s}" for k in (1, 2, 3)]
+                pts = np.array([P[c] for c in ch])
+                tip = pts[-1] + (pts[-1] - pts[-2]) * 0.8
+                pts = np.vstack([pts, tip])
+                ax.plot(pts[:, 0], pts[:, 1], "-", c="k", lw=1.2)
+    cap.release()
+    plt.tight_layout()
+    plt.savefig(path, dpi=70)
+    plt.close()
+
+
+# ----------------------------------------------------------------------------- main
+def word_from_name(path):
+    stem = os.path.splitext(os.path.basename(path))[0].lower()
+    for sep in ("_", "-", " "):
+        head = stem.split(sep)[0]
+        if head in WORD_LOOKUP:
+            return WORD_LOOKUP[head]
+    compact = "".join(ch for ch in stem if ch.isalpha())
+    for w in sorted(WORD_LOOKUP, key=len, reverse=True):
+        if compact.startswith(w):
+            return WORD_LOOKUP[w]
+    return None
+
+
+def main():
+    ap = argparse.ArgumentParser(description="PSL video -> Joe animation clip(s)")
+    ap.add_argument("input", help="a video file, or a folder of videos")
+    ap.add_argument("--avatar", default=os.path.join("public", "models", "joe.glb"))
+    ap.add_argument("--out", default=os.path.join("public", "animations"))
+    ap.add_argument("--word", help="word name (needed if the file name does not start with the word)")
+    ap.add_argument("--fps", type=int, default=30)
+    ap.add_argument("--start", type=float, help="start second (default: automatic)")
+    ap.add_argument("--end", type=float, help="end second (default: automatic)")
+    ap.add_argument("--active-height", type=float, default=0.08,
+                    help="metres above the hips a wrist must reach to count as signing (default 0.08)")
+    ap.add_argument("--preview", action="store_true", help="also save a picture comparing the video and Joe")
+    ap.add_argument("--specs", default="sign_specs.json", help="file that says which way each palm faces and the hand shape for each word")
+    ap.add_argument("--locked", default="locked_words.json", help="list of approved words that must never be overwritten")
+    ap.add_argument("--force", action="store_true", help="overwrite locked words anyway")
+    ap.add_argument("--no-snap", action="store_true", help="use the raw tracked finger bend instead of clear open/closed fingers")
+    ap.add_argument("--landmarks", help="use an existing .npz of landmarks instead of tracking")
+    ap.add_argument("--cache", default="psl_cache")
+    ap.add_argument("--models", default="psl_models")
+    a = ap.parse_args()
+
+    if not os.path.exists(a.avatar):
+        sys.exit(f"Avatar not found: {a.avatar}")
+    rig = Rig(a.avatar)
+    check_rig(rig)
+    rt = Retargeter(rig, snap=not a.no_snap)
+    rt.torso = TorsoMap(a.avatar, rig)
+    os.makedirs(a.out, exist_ok=True)
+
+    if os.path.isdir(a.input):
+        vids = sorted(p for ext in ("mp4", "mov", "avi", "mkv", "webm") for p in glob.glob(os.path.join(a.input, "*." + ext)))
+    else:
+        vids = [a.input]
+    manifest_path = os.path.join(a.out, "manifest.json")
+    manifest = json.load(open(manifest_path)) if os.path.exists(manifest_path) else {"words": {}}
+
+    specs = json.load(open(a.specs)) if os.path.exists(a.specs) else {}
+    locked = set(json.load(open(a.locked))) if os.path.exists(a.locked) else set()
+    done, failed = [], []
+    for v in vids:
+        if not os.path.exists(v):
+            print(f"STOP  video not found: {v}\n      Use the real path to the video (right click the file, Copy as path).")
+            failed.append(os.path.basename(v))
+            continue
+        word = WORD_LOOKUP.get(a.word.lower(), a.word) if a.word else word_from_name(v)
+        if not word:
+            print(f"SKIP  {os.path.basename(v)}  (cannot tell which word this is; use --word)")
+            failed.append(os.path.basename(v))
+            continue
+        if word in locked and not a.force and os.path.exists(os.path.join(a.out, "Sign_" + word.lower() + ".json")):
+            print(f"{word}:  LOCKED (approved), left unchanged. Use --force to overwrite.")
+            continue
+        print(f"{word}:  {os.path.basename(v)}")
+        data = load_landmarks(v, a.cache, a.models, a.landmarks)
+        cap = cv2.VideoCapture(v)
+        width, height = cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        cap.release()
+        spec = specs.get(word)
+        print("  sign spec:", "found" if spec else "none (palm direction comes from the video and can flip)")
+        clip, err = build_clip(rig, rt, data, a.fps, width, height, a.start, a.end, a.active_height, spec)
+        if err:
+            print(f"  FAILED: {err}")
+            failed.append(word)
+            continue
+        name = "Sign_" + word.lower()
+        clip.update(word=word, clip=name, source=os.path.basename(v))
+        with open(os.path.join(a.out, name + ".json"), "w") as fh:
+            json.dump(clip, fh, separators=(",", ":"))
+        manifest["words"][word] = {"clip": name, "file": name + ".json", "duration": clip["duration"]}
+        print(f"  OK  {clip['duration']}s  ({clip['start']}s to {clip['end']}s of the video)  -> {name}.json")
+        if a.preview:
+            pp = os.path.join(a.out, f"preview_{word}.png")
+            make_preview(rig, clip, v, pp)
+            print("  preview:", pp)
+        done.append(word)
+    with open(manifest_path, "w") as fh:
+        json.dump(manifest, fh, indent=1)
+    print(f"\nDone: {len(done)} word(s).  Failed or skipped: {len(failed)} {failed if failed else ''}")
+
+
+if __name__ == "__main__":
+    main()

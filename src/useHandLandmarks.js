@@ -9,16 +9,20 @@ const RAW_COORDS = 126
 const VELOCITY_DIM = 126
 const TARGET_FPS = 30.0
 const VELOCITY_AMP = 5.0
-const NO_HAND_RESET_FRAMES = 8
+const NO_HAND_RESET_FRAMES = 10
 
-// ─────────────────────────────────────────────────────────────────────────
-// Step 1: raw landmark extraction — SLOT ORDER, not handedness.
-// This mirrors sign_utils.py's extract_raw_landmarks(), which assigns
-// whichever hand MediaPipe detects first to slot 0 ("left" position in
-// the array) and the second detected hand to slot 1 ("right" position),
-// with no regard for which hand it actually is. Training data was built
-// this way, so inference must replicate it exactly, quirk and all.
-// ─────────────────────────────────────────────────────────────────────────
+// NEW: sample at a fixed 30 fps (same time scale as training), instead of
+// once per screen refresh (60 fps or whatever the browser manages)
+const SAMPLE_MS = 1000 / TARGET_FPS
+
+// NEW: run MediaPipe on a smaller mirrored canvas (0.5 = half size).
+// x/y are still scaled by the REAL video size below, so the features are
+// identical to before. Set to 1 to go back to full size.
+const DETECT_SCALE = 0.5
+
+// NEW: logs the real sampling FPS to the browser console once per second
+const DEBUG = true
+
 function extractRawLandmarks(landmarksArray, frameWidth, frameHeight) {
   const raw = new Float32Array(RAW_COORDS) // zero-filled
 
@@ -34,10 +38,6 @@ function extractRawLandmarks(landmarksArray, frameWidth, frameHeight) {
   return raw
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Step 2: normalize — wrist-relative, scaled by wrist-to-middle-MCP(9)
-// distance. Matches normalize_landmarks() in sign_utils.py.
-// ─────────────────────────────────────────────────────────────────────────
 function normalizeLandmarks(raw126) {
   const coords = []
   for (let i = 0; i < 42; i++) {
@@ -50,7 +50,7 @@ function normalizeLandmarks(raw126) {
   function processHand(hand) {
     const wrist = hand[0]
     const rel = hand.map(([x, y, z]) => [x - wrist[0], y - wrist[1], z - wrist[2]])
-    const [mx, my, mz] = rel[9] // middle finger MCP, landmark 9
+    const [mx, my, mz] = rel[9]
     const scale = Math.sqrt(mx * mx + my * my + mz * mz) + 1e-8
     return rel.map(([x, y, z]) => [x / scale, y / scale, z / scale])
   }
@@ -61,15 +61,10 @@ function normalizeLandmarks(raw126) {
   return new Float32Array([...leftOut.flat(), ...rightOut.flat()])
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Step 3: velocity — dt-normalized, clipped, amplified. Matches
-// compute_velocity() in sign_utils.py, including the dt clamp range and
-// the 5.0 amplification factor.
-// ─────────────────────────────────────────────────────────────────────────
 function computeVelocity(currentNorm, prevNorm, dt) {
   const expectedDt = 1.0 / TARGET_FPS
-  const minDt = 1.0 / (TARGET_FPS * 2)      // fastest allowed (1/60s)
-  const maxDt = 1.0 / (TARGET_FPS * 0.25)   // slowest allowed (1/7.5s)
+  const minDt = 1.0 / (TARGET_FPS * 2)
+  const maxDt = 1.0 / (TARGET_FPS * 0.25)
   const clampedDt = Math.min(Math.max(dt ?? expectedDt, minDt), maxDt)
 
   const scale = (expectedDt / clampedDt) * VELOCITY_AMP
@@ -85,9 +80,6 @@ function computeVelocity(currentNorm, prevNorm, dt) {
   return velocity
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Step 4: combine into the 252-dim feature vector
-// ─────────────────────────────────────────────────────────────────────────
 function buildFeatureVector(normalized, velocity) {
   const features = new Float32Array(252)
   features.set(normalized, 0)
@@ -102,32 +94,23 @@ function handPresent(normalized) {
   return false
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// The hook
-// ─────────────────────────────────────────────────────────────────────────
-// Returns:
-//   isReady        : model loaded and ready
-//   leftHand       : landmarks classified as the actual left hand — for
-//                    the debug indicator ONLY, not used for model input
-//   rightHand      : same, for the actual right hand
-//   bufferLength   : how many frames are currently in the rolling window (0-30)
-//   isBufferFull   : true once 30 frames have been collected
-//   getFeatureBuffer(): returns the current buffer as an array of 30
-//                    Float32Array(252) frames (oldest first), ready to be
-//                    stacked into a (30, 252) tensor for Stage 5
+// leftHand / rightHand are now simple true/false (they were full landmark
+// arrays). Translate.jsx only used them as true/false for the green dots,
+// so nothing else needs to change there.
 export function useHandLandmarks(videoRef, isActive) {
   const [isReady, setIsReady] = useState(false)
-  const [leftHand, setLeftHand] = useState(null)
-  const [rightHand, setRightHand] = useState(null)
+  const [leftHand, setLeftHand] = useState(false)
+  const [rightHand, setRightHand] = useState(false)
   const [bufferLength, setBufferLength] = useState(0)
 
   const landmarkerRef = useRef(null)
   const rafIdRef = useRef(null)
   const prevNormalizedRef = useRef(null)
   const prevTimestampRef = useRef(null)
-  const bufferRef = useRef([]) // array of Float32Array(252), oldest first
+  const bufferRef = useRef([])
   const noHandCountRef = useRef(0)
-  const mirrorCanvasRef = useRef(null) // offscreen canvas used to flip frames before detection
+  const mirrorCanvasRef = useRef(null)
+  const mirrorCtxRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -171,8 +154,8 @@ export function useHandLandmarks(videoRef, isActive) {
 
   useEffect(() => {
     if (!isActive || !isReady) {
-      setLeftHand(null)
-      setRightHand(null)
+      setLeftHand(false)
+      setRightHand(false)
       setBufferLength(0)
       bufferRef.current = []
       noHandCountRef.current = 0
@@ -181,45 +164,70 @@ export function useHandLandmarks(videoRef, isActive) {
       return
     }
 
+    let stopped = false
+    let lastSample = 0
+    let lastTs = 0
+    let fpsCount = 0
+    let fpsMark = performance.now()
+
     function detectFrame() {
+      if (stopped) return
+
       const video = videoRef.current
       const landmarker = landmarkerRef.current
+      const now = performance.now()
 
-      if (video && landmarker && video.readyState >= 2 && video.videoWidth > 0) {
-        const now = performance.now()
+      // Only process when the next 33 ms sample slot has arrived
+      // (the -5 stops it from alternating between 33 ms and 50 ms)
+      if (
+        video &&
+        landmarker &&
+        video.readyState >= 2 &&
+        video.videoWidth > 0 &&
+        now - lastSample >= SAMPLE_MS - 5 &&
+        now > lastTs
+      ) {
+        lastSample = now
+        lastTs = now
 
-        // Training data was captured with cv2.flip(frame, 1) applied
-        // BEFORE MediaPipe ever saw it (see collect_data.py) — every
-        // sample is a mirrored view. The raw <video> element here is
-        // NOT mirrored (only the on-screen CSS display is), so we flip
-        // it onto an offscreen canvas first to match training exactly.
+        const vw = video.videoWidth
+        const vh = video.videoHeight
+        const cw = Math.round(vw * DETECT_SCALE)
+        const ch = Math.round(vh * DETECT_SCALE)
+
+        // Create the canvas once. Resizing it every frame was expensive.
         if (!mirrorCanvasRef.current) {
           mirrorCanvasRef.current = document.createElement('canvas')
+          mirrorCtxRef.current = mirrorCanvasRef.current.getContext('2d')
         }
         const canvas = mirrorCanvasRef.current
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        const ctx = canvas.getContext('2d')
-        ctx.save()
-        ctx.scale(-1, 1)
-        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
-        ctx.restore()
+        if (canvas.width !== cw || canvas.height !== ch) {
+          canvas.width = cw
+          canvas.height = ch
+        }
+        const ctx = mirrorCtxRef.current
+
+        // Mirror the frame, same as cv2.flip(frame, 1) in training
+        ctx.setTransform(-1, 0, 0, 1, cw, 0)
+        ctx.drawImage(video, 0, 0, cw, ch)
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
 
         const result = landmarker.detectForVideo(canvas, now)
 
-        // For the debug display only — true handedness classification
-        let debugLeft = null
-        let debugRight = null
+        // Debug dots only
+        let hasLeft = false
+        let hasRight = false
+        const handed = result.handedness ?? result.handednesses ?? []
         result.landmarks.forEach((points, i) => {
-          const label = result.handedness[i]?.[0]?.categoryName
-          if (label === 'Left') debugLeft = points
-          if (label === 'Right') debugRight = points
+          const label = handed[i]?.[0]?.categoryName
+          if (label === 'Left') hasLeft = true
+          if (label === 'Right') hasRight = true
         })
-        setLeftHand(debugLeft)
-        setRightHand(debugRight)
+        setLeftHand(hasLeft)
+        setRightHand(hasRight)
 
-        // For the model — detection-order slots, matching sign_utils.py
-        const raw = extractRawLandmarks(result.landmarks, canvas.width, canvas.height)
+        // Model input: scaled by the REAL video size, same as before
+        const raw = extractRawLandmarks(result.landmarks, vw, vh)
         const normalized = normalizeLandmarks(raw)
 
         let dt = null
@@ -229,7 +237,7 @@ export function useHandLandmarks(videoRef, isActive) {
 
         const velocity =
           prevNormalizedRef.current == null
-            ? new Float32Array(VELOCITY_DIM) // zeros for the first frame
+            ? new Float32Array(VELOCITY_DIM)
             : computeVelocity(normalized, prevNormalizedRef.current, dt)
 
         const features = buildFeatureVector(normalized, velocity)
@@ -237,12 +245,6 @@ export function useHandLandmarks(videoRef, isActive) {
         prevNormalizedRef.current = normalized
         prevTimestampRef.current = now
 
-        // Only buffer frames where at least one hand is present, so a
-        // sign doesn't get diluted with empty frames while the hand is
-        // still moving into position. If the hand disappears for a
-        // short stretch (a natural pause between signs), wipe the
-        // buffer so the next sign starts from a clean window instead
-        // of a stale mix of the previous sign's frames.
         if (handPresent(normalized)) {
           noHandCountRef.current = 0
           const buf = bufferRef.current
@@ -256,6 +258,15 @@ export function useHandLandmarks(videoRef, isActive) {
             setBufferLength(0)
           }
         }
+
+        if (DEBUG) {
+          fpsCount++
+          if (now - fpsMark >= 1000) {
+            console.log(`[sampling] ${fpsCount} fps (${vw}x${vh} camera)`)
+            fpsCount = 0
+            fpsMark = now
+          }
+        }
       }
 
       rafIdRef.current = requestAnimationFrame(detectFrame)
@@ -264,6 +275,7 @@ export function useHandLandmarks(videoRef, isActive) {
     rafIdRef.current = requestAnimationFrame(detectFrame)
 
     return () => {
+      stopped = true
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
     }
   }, [isActive, isReady, videoRef])
