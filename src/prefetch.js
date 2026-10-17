@@ -19,10 +19,5 @@ const warm = () => {
 }
 
 if (typeof window !== 'undefined') {
-  const start = () =>
-    window.requestIdleCallback
-      ? window.requestIdleCallback(warm, { timeout: 4000 })
-      : setTimeout(warm, 2000)
-  if (document.readyState === 'complete') start()
-  else window.addEventListener('load', start, { once: true })
+  setTimeout(warm, 300)
 }

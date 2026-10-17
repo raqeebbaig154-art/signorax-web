@@ -19,4 +19,3 @@ if (splash) {
 }
 import './prefetch.js'
 
-import './prefetch.js'
