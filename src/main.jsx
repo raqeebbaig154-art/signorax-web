@@ -17,3 +17,6 @@ if (splash) {
   splash.style.opacity = '0'
   setTimeout(() => splash.remove(), 400)
 }
+import './prefetch.js'
+
+import './prefetch.js'
